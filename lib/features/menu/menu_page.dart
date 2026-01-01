@@ -21,8 +21,9 @@ class _MenuPageState extends State<MenuPage>
     with SingleTickerProviderStateMixin {
   final api = ApiService();
   bool loading = true;
-
   late TabController _tabController;
+
+  List<Product> _cart = [];
 
   @override
   void initState() {
@@ -41,8 +42,7 @@ class _MenuPageState extends State<MenuPage>
       }
     }
 
-    Provider.of<ProductProvider>(context, listen: false)
-        .setProducts(products);
+    Provider.of<ProductProvider>(context, listen: false).setProducts(products);
 
     final categoryCount = Provider.of<ProductProvider>(context, listen: false)
         .productsByCategory
@@ -53,33 +53,139 @@ class _MenuPageState extends State<MenuPage>
     setState(() => loading = false);
   }
 
-  void placeOrder(Product product) {
-    final orderProvider =
-        Provider.of<OrderProvider>(context, listen: false);
+  void placeOrder() async {
+    if (_cart.isEmpty) return;
 
-    api.createOrder({
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+
+    final orderData = {
       "restaurantId": widget.restaurantId,
-      "items": [product.name],
-      "total": product.price,
+      "receiver": "Guest",
+      "items": _cart.map((p) => {
+            "name": p.name,
+            "category": p.categoryName,
+            "quantity": p.quantity > 0 ? p.quantity : 1,
+            "price": p.price,
+          }).toList(),
+      "total": _cart.fold<double>(
+          0, (sum, p) => sum + ((p.quantity > 0 ? p.quantity : 1) * p.price)),
       "table": "Table ${Random().nextInt(10) + 1}",
-    });
+    };
 
-    orderProvider.addOrder(
-      Order(
-        id: product.id,
-        items: [product.name],
-        total: product.price,
-        table: "Table 1",
-        status: "NEW",
-        createdAt: DateTime.now(),
-      ),
-    );
+    try {
+      final Map<String, dynamic> response = await api.createOrder(orderData);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("${product.name} added to order"),
-        behavior: SnackBarBehavior.floating,
-      ),
+      if (response['success'] == true) {
+        final orderJson = response['order'] as Map<String, dynamic>;
+        orderProvider.addOrderFromJson(orderJson);
+
+        setState(() {
+          _cart.clear();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Order placed successfully"),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? "Failed to place order"),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error placing order: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Error placing order"),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// --------------------------
+  /// Show Cart in BottomSheet
+  /// --------------------------
+  void _showCartBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) {
+        return StatefulBuilder(builder: (context, setStateSheet) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Your Cart",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _cart.isEmpty
+                    ? const Text("Your cart is empty")
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _cart.length,
+                        itemBuilder: (context, index) {
+                          final p = _cart[index];
+                          return ListTile(
+                            title: Text(p.name),
+                            subtitle: Text(
+                                "${p.quantity ?? 1} x ${p.price} ETB = ${(p.quantity ?? 1) * p.price} ETB"),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  onPressed: () {
+                                    setStateSheet(() {
+                                      setState(() {
+                                        if ((p.quantity ?? 1) > 1) {
+                                          p.quantity = (p.quantity ?? 1) - 1;
+                                        } else {
+                                          _cart.removeAt(index);
+                                        }
+                                      });
+                                    });
+                                  },
+                                ),
+                                Text("${p.quantity ?? 1}"),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  onPressed: () {
+                                    setStateSheet(() {
+                                      setState(() {
+                                        p.quantity = (p.quantity ?? 1) + 1;
+                                      });
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _cart.isEmpty
+                      ? null
+                      : () {
+                          placeOrder();
+                          Navigator.pop(context);
+                        },
+                  child: const Text("Order Now"),
+                )
+              ],
+            ),
+          );
+        });
+      },
     );
   }
 
@@ -118,73 +224,109 @@ class _MenuPageState extends State<MenuPage>
                 );
               }).toList(),
             ),
+      floatingActionButton: _cart.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              icon: const Icon(Icons.shopping_cart),
+              label: Text("${_cart.length}"),
+              onPressed: _showCartBottomSheet,
+            ),
     );
   }
 
   Widget _productTile(Product p) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (!_cart.contains(p)) {
+            p.quantity = 1;
+            _cart.add(p);
+          } else {
+            p.quantity = (p.quantity ?? 1) + 1;
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${p.name} added to cart"),
+            behavior: SnackBarBehavior.floating,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.horizontal(left: Radius.circular(14)),
-            child: Image.network(
-              p.imageUrl,
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.fastfood, size: 50),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.name,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "${p.price} ETB",
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton(
-                      onPressed: () => placeOrder(p),
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text("Order"),
-                    ),
-                  ),
-                ],
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(14)),
+              child: Image.network(
+                p.imageUrl,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.fastfood, size: 50),
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "${p.price} ETB",
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            if (!_cart.contains(p)) {
+                              p.quantity = 1;
+                              _cart.add(p);
+                            } else {
+                              p.quantity = (p.quantity ?? 1) + 1;
+                            }
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text("Add to Cart"),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

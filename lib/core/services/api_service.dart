@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 class ApiService {
-  final Dio dio = Dio(BaseOptions(baseUrl: "http://localhost:3000/api"));
+  final Dio dio = Dio(BaseOptions(baseUrl: "http://localhost:3001/api"));
 
   /// Get all categories and menu items
   Future<List<dynamic>> getMenu() async {
@@ -35,8 +35,14 @@ class ApiService {
     await dio.delete("/menu/delete/$itemId");
   }
 
-  /// Create order
-  Future<void> createOrder(Map<String, dynamic> data) async {
-    await dio.post("/order/create", data: data);
+  /// Create order and return the created order
+  Future<Map<String, dynamic>> createOrder(Map<String, dynamic> data) async {
+    final res = await dio.post("/order/create", data: data);
+
+    if (res.statusCode == 200) {
+      return res.data as Map<String, dynamic>; // returns {success: true, order: {...}}
+    } else {
+      throw Exception("Failed to create order");
+    }
   }
 }

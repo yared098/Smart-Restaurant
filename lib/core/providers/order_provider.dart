@@ -13,25 +13,20 @@ class OrderProvider with ChangeNotifier {
   List<Order> get orders => _orders;
   List<Order> get orderHistory => _orderHistory;
 
-  /// Initialize provider: fetch history and listen to socket
   Future<void> init(String restaurantId) async {
     await fetchOrderHistory(restaurantId);
     _listenToNewOrders();
+    _listenToCategoryOrders();
   }
 
-  /// Fetch order history from API
   Future<void> fetchOrderHistory(String restaurantId) async {
     try {
       final fetchedOrders = await socketService.fetchOrders();
-      final historyOrders = fetchedOrders.map((json) => Order.fromJson(json)).toList();
+      final historyOrders =
+          fetchedOrders.map((json) => Order.fromJson(json)).toList();
 
-      // Avoid duplicates in _orderHistory
       _orderHistory = historyOrders;
-
-      // Also add orders to live _orders if not already there
-      for (var order in _orderHistory) {
-        addOrder(order); // use existing deduplicated addOrder
-      }
+      for (var order in _orderHistory) addOrder(order);
 
       notifyListeners();
     } catch (e) {
@@ -39,14 +34,19 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  /// Listen to real-time orders from socket
   void _listenToNewOrders() {
     socketService.onNewOrder((data) {
       addOrderFromJson(data['order']);
     });
   }
 
-  /// Add a new live order if it doesn't exist
+  void _listenToCategoryOrders() {
+    socketService.socket.on("new_order_categories", (data) {
+      // Optional: category-wise UI updates
+      print("Category-wise orders update: $data");
+    });
+  }
+
   void addOrder(Order order) {
     if (!_orders.any((o) => o.id == order.id)) {
       _orders.add(order);
@@ -54,13 +54,11 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  /// ✅ Add order directly from JSON
   void addOrderFromJson(Map<String, dynamic> json) {
     final order = Order.fromJson(json);
-    addOrder(order); // deduplicated
+    addOrder(order);
   }
 
-  /// Update an order's status
   void updateOrder(Order order) {
     int index = _orders.indexWhere((o) => o.id == order.id);
     if (index != -1) {
@@ -69,7 +67,6 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  /// Complete an order and move to history
   void completeOrder(String orderId) {
     int index = _orders.indexWhere((o) => o.id == orderId);
     if (index != -1) {

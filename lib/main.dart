@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_restaurant/core/providers/config_provider.dart';
+import 'package:smart_restaurant/core/providers/kitchen_provider.dart';
 import 'package:smart_restaurant/core/services/config_service.dart';
+import 'package:smart_restaurant/core/services/kitchen_service.dart';
 import 'app/router.dart';
 import 'core/providers/product_provider.dart';
 import 'core/providers/order_provider.dart';
@@ -11,6 +13,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final configService = ConfigService();
+     final kitchenService = KitchenService(); // lowercase
+
   final configProvider = ConfigProvider(configService: configService);
 
   await configProvider.loadConfig(); // ✅ load once
@@ -25,6 +29,7 @@ void main() async {
           value: configProvider, // ✅ USE SAME INSTANCE
         ),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => KitchenProvider(kitchenService: kitchenService)),
         ChangeNotifierProvider(
           create: (_) {
             final provider = OrderProvider(socketService: socketService);

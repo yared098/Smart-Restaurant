@@ -5,7 +5,8 @@ class Product {
   final String imageUrl;
   final String categoryId;
   final String categoryName;
-  final bool available; // ✅ added available field
+  final bool available; // ✅ availability
+  int quantity; // ✅ added quantity (mutable)
 
   Product({
     required this.id,
@@ -15,6 +16,7 @@ class Product {
     required this.categoryId,
     required this.categoryName,
     this.available = true, // default true
+    this.quantity = 0, // default 0
   });
 
   // ✅ Make categoryName a named parameter
@@ -26,7 +28,8 @@ class Product {
       imageUrl: json['imageUrl'],
       categoryId: json['categoryId'] ?? "cat_main",
       categoryName: categoryName,
-      available: json['available'] ?? true, // handle availability from JSON
+      available: json['available'] ?? true,
+      quantity: json['quantity'] ?? 0, // read quantity from JSON if exists
     );
   }
 
@@ -37,7 +40,9 @@ class Product {
       'price': price,
       'imageUrl': imageUrl,
       'categoryId': categoryId,
+      'categoryName': categoryName,
       'available': available,
+      'quantity': quantity, // include quantity in JSON
     };
   }
 }

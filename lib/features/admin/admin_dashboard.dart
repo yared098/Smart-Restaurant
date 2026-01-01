@@ -97,47 +97,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  // Widget buildSidebar() {
-  //   return Container(
-  //     width: 220,
-  //     color: Colors.blue.shade700,
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const SizedBox(height: 40),
-  //         Padding(
-  //           padding: const EdgeInsets.symmetric(horizontal: 16),
-  //           child: Row(
-  //             children: const [
-  //               CircleAvatar(
-  //                 radius: 28,
-  //                 backgroundColor: Colors.white,
-  //                 child: Icon(Icons.restaurant_menu, size: 32, color: Colors.blue),
-  //               ),
-  //               SizedBox(width: 10),
-  //               Text(
-  //                 "Admin",
-  //                 style: TextStyle(color: Colors.white, fontSize: 20),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //         const SizedBox(height: 30),
-  //         buildSidebarButton(Icons.fastfood, "Products"),
-  //         buildSidebarButton(Icons.add, "Add Product"),
-  //         buildSidebarButton(Icons.system_security_update, "Config"),
-
-  //         buildSidebarButton(Icons.list_alt, "Incoming Orders"),
-  //         buildSidebarButton(Icons.history, "Order History"),
-  //         buildSidebarButton(Icons.qr_code, "Menu QR Code"),
-  //         buildSidebarButton(Icons.menu, "Menu"),
-  //         const Spacer(),
-  //         buildSidebarButton(Icons.logout, "Logout"),
-  //         const SizedBox(height: 20),
-  //       ],
-  //     ),
-  //   );
-  // }
+ 
   Widget buildSidebar(
   Color sidebarColor,
   Color selectedColor,
@@ -202,36 +162,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   );
 }
 
-
-  // Widget buildSidebarButton(IconData icon, String label) {
-  //   bool isSelected = selectedSection == label;
-  //   return InkWell(
-  //     onTap: () {
-  //       setState(() {
-  //         selectedSection = label;
-  //         showProductSlide = false; // close any open slide panel
-  //       });
-
-  //       if (label == "Logout") {
-  //         // handle logout
-  //       }
-  //     },
-  //     child: Container(
-  //       color: isSelected ? Colors.blue.shade900 : Colors.transparent,
-  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  //       child: Row(
-  //         children: [
-  //           Icon(icon, color: Colors.white),
-  //           const SizedBox(width: 10),
-  //           Text(
-  //             label,
-  //             style: const TextStyle(color: Colors.white, fontSize: 16),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
   Widget buildSidebarButton(
   IconData icon,
   String label,

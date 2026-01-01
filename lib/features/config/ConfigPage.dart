@@ -15,6 +15,8 @@ class _ConfigPageState extends State<ConfigPage> {
 
   final _appNameController = TextEditingController();
   final _appLogoController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _welcomeMessageController = TextEditingController();
 
   Color _primaryColor = Colors.blue;
@@ -22,9 +24,10 @@ class _ConfigPageState extends State<ConfigPage> {
   bool _enableOrders = true;
 
   bool _showLogoEditor = false;
+  bool _showCredentials = false; // Hide username/password by default
+  bool _passwordVisible = false;  // Password toggle
   bool _initialized = false;
 
-  /// ✅ Sync provider ONCE
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -38,6 +41,8 @@ class _ConfigPageState extends State<ConfigPage> {
     _primaryColor = config.primaryColor ?? _primaryColor;
     _secondaryColor = config.secondaryColor ?? _secondaryColor;
     _enableOrders = config.enableOrders;
+    _usernameController.text = config.username;
+    _passwordController.text = config.password;
 
     _initialized = true;
   }
@@ -47,6 +52,8 @@ class _ConfigPageState extends State<ConfigPage> {
     _appNameController.dispose();
     _appLogoController.dispose();
     _welcomeMessageController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -84,6 +91,8 @@ class _ConfigPageState extends State<ConfigPage> {
       "primaryColor": _colorToHex(_primaryColor),
       "secondaryColor": _colorToHex(_secondaryColor),
       "enableOrders": _enableOrders,
+      "username": _usernameController.text,
+      "password": _passwordController.text,
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -102,6 +111,57 @@ class _ConfigPageState extends State<ConfigPage> {
     );
   }
 
+  Widget _credentialsSection() {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.lock),
+              title: const Text("Change Username & Password"),
+              trailing: Icon(
+                  _showCredentials ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
+              onTap: () => setState(() => _showCredentials = !_showCredentials),
+            ),
+            if (_showCredentials) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: "Username",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: !_passwordVisible,
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_passwordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off),
+                    onPressed: () =>
+                        setState(() => _passwordVisible = !_passwordVisible),
+                  ),
+                ),
+                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+              ),
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,118 +173,105 @@ class _ConfigPageState extends State<ConfigPage> {
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  /// App Name
-                  TextFormField(
-                    controller: _appNameController,
-                    decoration: const InputDecoration(
-                      labelText: "App Name",
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? "Required" : null,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  /// Logo Preview
-                  if (_appLogoController.text.isNotEmpty)
-                    Column(
-                      children: [
-                        Image.network(
-                          _appLogoController.text,
-                          height: 80,
-                          errorBuilder: (_, __, ___) =>
-                              const Text("Invalid Image URL"),
+          child: Column(
+            children: [
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _appNameController,
+                        decoration: const InputDecoration(
+                          labelText: "App Name",
+                          border: OutlineInputBorder(),
                         ),
-                        TextButton.icon(
-                          icon: const Icon(Icons.edit),
-                          label: const Text("Change Logo"),
-                          onPressed: () =>
-                              setState(() => _showLogoEditor = true),
-                        ),
-                      ],
-                    ),
-
-                  /// Logo Editor (Hidden by default)
-                  if (_showLogoEditor)
-                    TextFormField(
-                      controller: _appLogoController,
-                      decoration: const InputDecoration(
-                        labelText: "App Logo URL",
-                        border: OutlineInputBorder(),
+                        validator: (v) =>
+                            v == null || v.isEmpty ? "Required" : null,
                       ),
-                    ),
-
-                  const SizedBox(height: 16),
-
-                  /// Welcome Message
-                  TextFormField(
-                    controller: _welcomeMessageController,
-                    decoration: const InputDecoration(
-                      labelText: "Welcome Message",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const Divider(height: 32),
-
-                  /// Colors
-                  _colorTile(
-                    "Primary Color",
-                    _primaryColor,
-                    () => _pickColor(
-                      _primaryColor,
-                      (c) => setState(() => _primaryColor = c),
-                    ),
-                  ),
-
-                  _colorTile(
-                    "Secondary Color",
-                    _secondaryColor,
-                    () => _pickColor(
-                      _secondaryColor,
-                      (c) => setState(() => _secondaryColor = c),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  /// Enable Orders
-                  SwitchListTile(
-                    title: const Text("Enable Orders"),
-                    value: _enableOrders,
-                    onChanged: (v) =>
-                        setState(() => _enableOrders = v),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.save),
-                      label: const Text("Save Configuration"),
-                      onPressed: _saveConfig,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 16),
+                      if (_appLogoController.text.isNotEmpty)
+                        Column(
+                          children: [
+                            Image.network(
+                              _appLogoController.text,
+                              height: 80,
+                              errorBuilder: (_, __, ___) =>
+                                  const Text("Invalid Image URL"),
+                            ),
+                            TextButton.icon(
+                              icon: const Icon(Icons.edit),
+                              label: const Text("Change Logo"),
+                              onPressed: () =>
+                                  setState(() => _showLogoEditor = true),
+                            ),
+                          ],
+                        ),
+                      if (_showLogoEditor)
+                        TextFormField(
+                          controller: _appLogoController,
+                          decoration: const InputDecoration(
+                            labelText: "App Logo URL",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _welcomeMessageController,
+                        decoration: const InputDecoration(
+                          labelText: "Welcome Message",
+                          border: OutlineInputBorder(),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      _colorTile(
+                        "Primary Color",
+                        _primaryColor,
+                        () => _pickColor(
+                          _primaryColor,
+                          (c) => setState(() => _primaryColor = c),
+                        ),
+                      ),
+                      _colorTile(
+                        "Secondary Color",
+                        _secondaryColor,
+                        () => _pickColor(
+                          _secondaryColor,
+                          (c) => setState(() => _secondaryColor = c),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        title: const Text("Enable Orders"),
+                        value: _enableOrders,
+                        onChanged: (v) => setState(() => _enableOrders = v),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              _credentialsSection(),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label: const Text("Save Configuration"),
+                  onPressed: _saveConfig,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

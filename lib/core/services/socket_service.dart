@@ -6,7 +6,7 @@ class SocketService {
   late IO.Socket socket;
   final String baseUrl;
 
-  SocketService({this.baseUrl = "http://localhost:3000/api"});
+  SocketService({this.baseUrl = "http://localhost:3001/api"});
 
   /// Connect to socket server
   void connect() {

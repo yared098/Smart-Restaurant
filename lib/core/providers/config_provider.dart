@@ -17,6 +17,8 @@ class ConfigProvider with ChangeNotifier {
   Color? secondaryColor;
   String? welcomeMessage;
   bool enableOrders = true;
+   String username = 'admin';  // Default
+  String password = '123456'; // Default
 
   static const _storageKey = 'app_config';
 
@@ -62,18 +64,7 @@ class ConfigProvider with ChangeNotifier {
     }
   }
 
-  /// -----------------------------
-  /// APPLY CONFIG DATA
-  /// -----------------------------
-  // void _applyConfig(Map<String, dynamic> data) {
-  //   appName = data['appName'] ?? appName;
-  //   appLogo = data['appLogo'] ?? appLogo;
-  //   primaryColor = _hexToColor(data['primaryColor']) ?? primaryColor;
-  //   secondaryColor = _hexToColor(data['secondaryColor']) ?? secondaryColor;
-  //   welcomeMessage = data['welcomeMessage'] ?? welcomeMessage;
-  //   enableOrders = data['enableOrders'] ?? enableOrders;
-  // }
-
+ 
 void _applyConfig(Map<String, dynamic> data) {
   appName = data['appName'] ?? appName;
   appLogo = data['appLogo'] ?? appLogo;
@@ -81,6 +72,8 @@ void _applyConfig(Map<String, dynamic> data) {
   secondaryColor = _hexToColor(data['secondaryColor']) ?? secondaryColor;
   welcomeMessage = data['welcomeMessage'] ?? welcomeMessage;
   enableOrders = data['enableOrders'] ?? enableOrders;
+   username = data['username'] ?? username;
+    password = data['password'] ?? password;
 
   // 🌐 Update web-specific branding
   if (kIsWeb) {
@@ -113,6 +106,8 @@ void _applyConfig(Map<String, dynamic> data) {
         'secondaryColor': _colorToHex(secondaryColor),
         'welcomeMessage': welcomeMessage,
         'enableOrders': enableOrders,
+        'username': username,
+        'password': password,
       }),
     );
   }

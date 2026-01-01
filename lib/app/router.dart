@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
+import 'package:smart_restaurant/features/Kitchen/HostessPage.dart';
 import 'package:smart_restaurant/features/config/ConfigPage.dart';
+import 'package:smart_restaurant/features/orders/waiter_dashboard.dart';
 import '../features/qr/qr_scanner_page.dart';
 import '../features/menu/menu_page.dart';
 import '../features/admin/admin_dashboard.dart';
@@ -11,6 +13,7 @@ final router = GoRouter(
   routes: [
     GoRoute(path: "/scan", builder: (_, __) => const QRGeneratorPage(restaurantId: "rest_001",)),
     GoRoute(path: "/config", builder: (_, __) => const ConfigPage()),
+    GoRoute(path: "/host", builder: (_, __) => const HostessPage()),
 
     GoRoute(
       path: '/menu/:restaurantId',
@@ -26,6 +29,8 @@ final router = GoRouter(
         return MenuPage(restaurantId: restaurantId); // Pass restaurantId
       },
     ),
+        GoRoute(path: "/kitchen", builder: (_, __) => const KitchenDashboardPage()),
+
     GoRoute(path: "/admin", builder: (_, __) => const AdminDashboard()),
     GoRoute(path: "/admin/add", builder: (_, __) => const AddProductPanel()),
     GoRoute(path: "/orders", builder: (_, __) => const OrdersPage()),
