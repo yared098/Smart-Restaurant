@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/kitchen_provider.dart';
 import '../../core/models/order.dart';
+import '../../core/providers/config_provider.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -29,6 +30,10 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
     final socketStatus = kitchenProvider.socketStatus;
     final networkStatus = kitchenProvider.networkStatus;
 
+    final config = context.watch<ConfigProvider>();
+    final primaryColor = config.primaryColor ?? Colors.deepOrange;
+    final secondaryColor = config.secondaryColor ?? Colors.orangeAccent;
+
     // Connection indicator
     Color statusColor;
     if (networkStatus == NetworkStatus.offline) {
@@ -39,14 +44,15 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
       statusColor = Colors.orange;
     }
 
-    // Status counts
     final statusCounts = {
       for (var s in statuses) s: orders.where((o) => o.status == s).length
     };
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.deepOrange,
+      appBar:
+       AppBar(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
         title: Row(
           children: [
             const Text("Orders"),
@@ -65,20 +71,20 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
           controller: _tabController,
           isScrollable: true,
           indicator: BoxDecoration(
-            borderRadius: BorderRadius.circular(1),
-            // color: Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(16),
+            color: secondaryColor.withOpacity(0.2),
           ),
           tabs: statuses.map((status) {
             return Tab(
               child: Row(
                 children: [
-                  Text(status, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(status, style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(width: 6),
                   if (statusCounts[status]! > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _statusColor(status).shade700,
+                        color: _statusColor(status, primaryColor).shade700,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -92,6 +98,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
           }).toList(),
         ),
       ),
+     
       body: TabBarView(
         controller: _tabController,
         children: statuses.map((status) {
@@ -112,17 +119,17 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final o = filteredOrders[index];
-              final color = _statusColor(o.status);
+              final color = _statusColor(o.status, primaryColor);
 
               return Card(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                elevation: 3,
-                shadowColor: color.withOpacity(0.4),
+                elevation: 4,
+                shadowColor: color.withOpacity(0.3),
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(
                       colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
                       begin: Alignment.topLeft,
@@ -148,10 +155,17 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: color,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: color.withOpacity(0.4),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ],
                             ),
                             child: Text(
                               o.status,
@@ -161,28 +175,28 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      // Items as chips
+                      const SizedBox(height: 12),
+                      // Items
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
                         children: o.items.map((item) {
                           return Chip(
                             label: Text("${item.name} x${item.quantity}"),
-                            backgroundColor: color.withOpacity(0.15),
-                            labelStyle: TextStyle(color: color.shade800),
+                            backgroundColor: secondaryColor.withOpacity(0.2),
+                            labelStyle: TextStyle(color: primaryColor),
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       // Total
                       Text(
                         "Total: ${o.total} ETB",
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-                      const SizedBox(height: 10),
-                      // Change Status Dropdown
+                      const SizedBox(height: 12),
+                      // Status Dropdown
                       Row(
                         children: [
                           const Text(
@@ -217,7 +231,7 @@ class _OrdersPageState extends State<OrdersPage> with TickerProviderStateMixin {
     );
   }
 
-  MaterialColor _statusColor(String status) {
+  MaterialColor _statusColor(String status, Color primary) {
     switch (status) {
       case "NEW":
         return Colors.green;

@@ -5,6 +5,8 @@ import 'package:smart_restaurant/core/models/order.dart';
 import 'package:smart_restaurant/core/providers/product_provider.dart';
 import 'package:smart_restaurant/core/providers/kitchen_provider.dart';
 import 'package:smart_restaurant/core/services/api_service.dart';
+import 'package:smart_restaurant/core/providers/config_provider.dart';
+
 
 class KitchenDashboardPage extends StatefulWidget {
   const KitchenDashboardPage({super.key});
@@ -109,15 +111,17 @@ class _KitchenDashboardPageState extends State<KitchenDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+     final config = context.watch<ConfigProvider>();
     final productsByCategory =
         context.watch<ProductProvider>().productsByCategory;
     final orders = context.watch<KitchenProvider>().orders;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
+        backgroundColor: config.primaryColor,
         title: const Text("Waite Dashboard"),
-        backgroundColor: Colors.deepOrange,
+        foregroundColor: Colors.white,
+        
         elevation: 0,
         actions: [
           IconButton(
@@ -356,7 +360,7 @@ class _KitchenDashboardPageState extends State<KitchenDashboardPage> {
                 icon: const Icon(Icons.receipt_long),
                 label: Text("Order Now (${selectedProducts.length})"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepOrange,
+                  backgroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

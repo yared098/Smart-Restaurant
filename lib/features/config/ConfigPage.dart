@@ -24,8 +24,8 @@ class _ConfigPageState extends State<ConfigPage> {
   bool _enableOrders = true;
 
   bool _showLogoEditor = false;
-  bool _showCredentials = false; // Hide username/password by default
-  bool _passwordVisible = false;  // Password toggle
+  bool _showCredentials = false;
+  bool _passwordVisible = false;
   bool _initialized = false;
 
   @override
@@ -34,7 +34,6 @@ class _ConfigPageState extends State<ConfigPage> {
     if (_initialized) return;
 
     final config = context.read<ConfigProvider>();
-
     _appNameController.text = config.appName ?? '';
     _appLogoController.text = config.appLogo;
     _welcomeMessageController.text = config.welcomeMessage ?? '';
@@ -61,12 +60,15 @@ class _ConfigPageState extends State<ConfigPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Pick Color"),
-        content: ColorPicker(
-          pickerColor: current,
-          onColorChanged: onSelect,
-          enableAlpha: false,
-          displayThumbColor: true,
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: current,
+            onColorChanged: onSelect,
+            enableAlpha: false,
+            displayThumbColor: true,
+          ),
         ),
         actions: [
           TextButton(
@@ -78,8 +80,7 @@ class _ConfigPageState extends State<ConfigPage> {
     );
   }
 
-  String _colorToHex(Color c) =>
-      '#${c.value.toRadixString(16).substring(2).toUpperCase()}';
+  String _colorToHex(Color c) => '#${c.value.toRadixString(16).substring(2).toUpperCase()}';
 
   Future<void> _saveConfig() async {
     if (!_formKey.currentState!.validate()) return;
@@ -98,29 +99,38 @@ class _ConfigPageState extends State<ConfigPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Configuration Updated")),
     );
-
     setState(() => _showLogoEditor = false);
   }
 
   Widget _colorTile(String title, Color color, VoidCallback onTap) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(_colorToHex(color)),
-      trailing: CircleAvatar(backgroundColor: color),
-      onTap: onTap,
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(_colorToHex(color)),
+        trailing: CircleAvatar(
+          backgroundColor: color,
+          radius: 18,
+        ),
+        onTap: onTap,
+      ),
     );
   }
 
-  Widget _credentialsSection() {
+  Widget _credentialsSection(Color primary) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.symmetric(vertical: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             ListTile(
-              leading: const Icon(Icons.lock),
+              leading: Icon(Icons.lock, color: primary),
               title: const Text("Change Username & Password"),
               trailing: Icon(
                   _showCredentials ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
@@ -130,10 +140,10 @@ class _ConfigPageState extends State<ConfigPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _usernameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Username",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.person),
                 ),
                 validator: (v) => v == null || v.isEmpty ? "Required" : null,
               ),
@@ -143,7 +153,7 @@ class _ConfigPageState extends State<ConfigPage> {
                 obscureText: !_passwordVisible,
                 decoration: InputDecoration(
                   labelText: "Password",
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(_passwordVisible
@@ -164,10 +174,14 @@ class _ConfigPageState extends State<ConfigPage> {
 
   @override
   Widget build(BuildContext context) {
+    final primary = _primaryColor;
+    final secondary = _secondaryColor;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("App Configuration"),
-        backgroundColor: _primaryColor,
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -175,33 +189,36 @@ class _ConfigPageState extends State<ConfigPage> {
           key: _formKey,
           child: Column(
             children: [
+              // ===== General Settings Card =====
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shadowColor: primary.withOpacity(0.3),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TextFormField(
                         controller: _appNameController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: "App Name",
-                          border: OutlineInputBorder(),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        validator: (v) =>
-                            v == null || v.isEmpty ? "Required" : null,
+                        validator: (v) => v == null || v.isEmpty ? "Required" : null,
                       ),
                       const SizedBox(height: 16),
                       if (_appLogoController.text.isNotEmpty)
                         Column(
                           children: [
-                            Image.network(
-                              _appLogoController.text,
-                              height: 80,
-                              errorBuilder: (_, __, ___) =>
-                                  const Text("Invalid Image URL"),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                _appLogoController.text,
+                                height: 80,
+                                errorBuilder: (_, __, ___) =>
+                                    const Text("Invalid Image URL"),
+                              ),
                             ),
                             TextButton.icon(
                               icon: const Icon(Icons.edit),
@@ -214,48 +231,42 @@ class _ConfigPageState extends State<ConfigPage> {
                       if (_showLogoEditor)
                         TextFormField(
                           controller: _appLogoController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: "App Logo URL",
-                            border: OutlineInputBorder(),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _welcomeMessageController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: "Welcome Message",
-                          border: OutlineInputBorder(),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _colorTile(
-                        "Primary Color",
-                        _primaryColor,
-                        () => _pickColor(
-                          _primaryColor,
-                          (c) => setState(() => _primaryColor = c),
-                        ),
-                      ),
-                      _colorTile(
-                        "Secondary Color",
-                        _secondaryColor,
-                        () => _pickColor(
-                          _secondaryColor,
-                          (c) => setState(() => _secondaryColor = c),
-                        ),
-                      ),
+                      _colorTile("Primary Color", primary, () {
+                        _pickColor(primary, (c) => setState(() => _primaryColor = c));
+                      }),
+                      _colorTile("Secondary Color", secondary, () {
+                        _pickColor(secondary, (c) => setState(() => _secondaryColor = c));
+                      }),
                       const SizedBox(height: 8),
                       SwitchListTile(
                         title: const Text("Enable Orders"),
                         value: _enableOrders,
+                        activeColor: primary,
                         onChanged: (v) => setState(() => _enableOrders = v),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              _credentialsSection(),
+
+              // ===== Credentials Card =====
+              _credentialsSection(primary),
+
+              // ===== Save Button =====
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -264,10 +275,12 @@ class _ConfigPageState extends State<ConfigPage> {
                   label: const Text("Save Configuration"),
                   onPressed: _saveConfig,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 4,
                   ),
                 ),
               ),

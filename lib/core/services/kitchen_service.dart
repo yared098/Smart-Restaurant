@@ -4,7 +4,7 @@ class KitchenService {
   late final IO.Socket socket;
   final String baseUrl;
 
-  KitchenService({this.baseUrl = "http://localhost:3001"}) {
+  KitchenService({this.baseUrl = "http://localhost:3000"}) {
     _connect();
   }
 

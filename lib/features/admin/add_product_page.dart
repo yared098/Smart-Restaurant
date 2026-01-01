@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_restaurant/core/providers/config_provider.dart';
 import '../../core/models/product.dart';
 import '../../core/providers/product_provider.dart';
 import '../../core/services/api_service.dart';
@@ -11,7 +12,7 @@ class AddProductPanel extends StatefulWidget {
   State<AddProductPanel> createState() => _AddProductPanelState();
 }
 
-class _AddProductPanelState extends State<AddProductPanel> {
+class _AddProductPanelState extends State<AddProductPanel> with SingleTickerProviderStateMixin {
   final _productFormKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final priceController = TextEditingController();
@@ -44,8 +45,9 @@ class _AddProductPanelState extends State<AddProductPanel> {
       });
     } catch (e) {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Failed to load categories")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to load categories")),
+      );
     }
   }
 
@@ -80,16 +82,18 @@ class _AddProductPanelState extends State<AddProductPanel> {
           "imageUrl": product.imageUrl,
         });
 
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Product Added!")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Product Added!")),
+        );
 
-        // Clear form for next product
+        // Clear form
         nameController.clear();
         priceController.clear();
         imageController.clear();
       } catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Failed to add product")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to add product")),
+        );
       }
     }
   }
@@ -101,19 +105,24 @@ class _AddProductPanelState extends State<AddProductPanel> {
       try {
         await api.addCategory(newCategory);
         categoryNameController.clear();
-        Navigator.pop(context); // close bottom sheet
-        fetchCategories(); // refresh grid
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Category Added!")));
+
+        Navigator.pop(context);
+        await fetchCategories();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Category Added!")),
+        );
       } catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Failed to add category")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to add category")),
+        );
       }
     }
   }
 
-  InputDecoration inputDecoration(String label) {
+  InputDecoration inputDecoration(String label, {IconData? icon}) {
     return InputDecoration(
+      prefixIcon: icon != null ? Icon(icon) : null,
       labelText: label,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
@@ -133,34 +142,39 @@ class _AddProductPanelState extends State<AddProductPanel> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            top: 16,
-            left: 16,
-            right: 16),
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          top: 16,
+          left: 16,
+          right: 16,
+        ),
         child: Form(
           key: _categoryFormKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Add New Category",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
+              const Text(
+                "Add New Category",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: categoryNameController,
-                decoration: inputDecoration("Category Name"),
-                validator: (val) =>
-                    val == null || val.isEmpty ? "Enter category name" : null,
+                decoration: inputDecoration("Category Name", icon: Icons.category),
+                validator: (val) => val == null || val.isEmpty ? "Enter category name" : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text("Add Category"),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.orange,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
                 ),
                 onPressed: submitCategory,
               ),
@@ -172,128 +186,118 @@ class _AddProductPanelState extends State<AddProductPanel> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return isLoading
+ @override
+Widget build(BuildContext context) {
+  final config = Provider.of<ConfigProvider>(context);
+
+  final primary = config.primaryColor ?? Colors.black;
+  final secondary = config.secondaryColor ?? Colors.blue;
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(config.appName ?? "Add Product Panel"),
+      backgroundColor: primary,
+      foregroundColor: Colors.white,
+    ),
+    body: isLoading
         ? const Center(child: CircularProgressIndicator())
         : Stack(
             children: [
               // ===== Category Grid =====
-              // Padding(
-              //   padding: const EdgeInsets.all(16.0),
-              //   child: GridView.builder(
-              //     itemCount: categories.length,
-              //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              //       crossAxisCount: 2,
-              //       mainAxisSpacing: 12,
-              //       crossAxisSpacing: 12,
-              //       childAspectRatio: 1.2,
-              //     ),
-              //     itemBuilder: (context, index) {
-              //       final category = categories[index];
-              //       return GestureDetector(
-              //         onTap: () {
-              //           setState(() {
-              //             selectedCategoryId = category['id'];
-              //             selectedCategoryName = category['name'];
-              //           });
-              //         },
-              //         child: Container(
-              //           decoration: BoxDecoration(
-              //             borderRadius: BorderRadius.circular(16),
-              //             gradient: LinearGradient(
-              //               colors: [Colors.orange.shade200, Colors.orange.shade400],
-              //               begin: Alignment.topLeft,
-              //               end: Alignment.bottomRight,
-              //             ),
-              //             boxShadow: [
-              //               BoxShadow(
-              //                 color: Colors.orange.shade100,
-              //                 blurRadius: 4,
-              //                 offset: const Offset(2, 2),
-              //               ),
-              //             ],
-              //           ),
-              //           padding: const EdgeInsets.all(12),
-              //           child: Center(
-              //             child: Text(category['name']!,
-              //                 style: const TextStyle(
-              //                     fontWeight: FontWeight.bold, fontSize: 18)),
-              //           ),
-              //         ),
-              //       );
-              //     },
-              //   ),
-              // ),
-Padding(
-  padding: const EdgeInsets.all(16.0),
-  child: GridView.builder(
-    itemCount: categories.length,
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.2,
-    ),
-    itemBuilder: (context, index) {
-      final category = categories[index];
-      final productsByCategory = Provider.of<ProductProvider>(context).productsByCategory;
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: GridView.builder(
+                  itemCount: categories.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.2,
+                  ),
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final productsByCategory =
+                        Provider.of<ProductProvider>(context).productsByCategory;
+                    final productCount =
+                        productsByCategory[category['name']]?.length ?? 0;
 
-      final productCount = productsByCategory[category['name']]?.length ?? 0;
+                    final isSelected = selectedCategoryId == category['id'];
 
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedCategoryId = category['id'];
-            selectedCategoryName = category['name'];
-          });
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [Colors.orange.shade200, Colors.orange.shade400],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.shade100,
-                blurRadius: 4,
-                offset: const Offset(2, 2),
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedCategoryId = category['id'];
+                          selectedCategoryName = category['name'];
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: LinearGradient(
+                            colors: isSelected
+                                ? [primary.withOpacity(0.8), primary]
+                                : [secondary.withOpacity(0.8), secondary],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primary.withOpacity(0.3),
+                              blurRadius: 6,
+                              offset: const Offset(2, 2),
+                            ),
+                          ],
+                          border: isSelected
+                              ? Border.all(color: Colors.white, width: 3)
+                              : null,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              category['name']!,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.white),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "$productCount products",
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ],
-          ),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                category['name']!,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "$productCount products",
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  ),
-),
+
               // ===== Sliding Product Form =====
               if (selectedCategoryId != null)
-                Positioned(
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
                   top: 0,
                   bottom: 0,
                   right: 0,
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: Material(
-                    elevation: 8,
+                    elevation: 10,
+                    borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomLeft: Radius.circular(16)),
                     child: Container(
                       color: Colors.white,
                       padding: const EdgeInsets.all(16),
@@ -327,36 +331,45 @@ Padding(
                                   children: [
                                     TextFormField(
                                       controller: nameController,
-                                      decoration: inputDecoration("Product Name"),
-                                      validator: (val) => val == null || val.isEmpty
-                                          ? "Enter product name"
-                                          : null,
+                                      decoration: inputDecoration("Product Name",
+                                          icon: Icons.label),
+                                      validator: (val) =>
+                                          val == null || val.isEmpty
+                                              ? "Enter product name"
+                                              : null,
                                     ),
                                     const SizedBox(height: 12),
                                     TextFormField(
                                       controller: priceController,
-                                      decoration: inputDecoration("Price"),
+                                      decoration: inputDecoration("Price",
+                                          icon: Icons.money),
                                       keyboardType: TextInputType.number,
-                                      validator: (val) => val == null || val.isEmpty
-                                          ? "Enter price"
-                                          : null,
+                                      validator: (val) =>
+                                          val == null || val.isEmpty
+                                              ? "Enter price"
+                                              : null,
                                     ),
                                     const SizedBox(height: 12),
                                     TextFormField(
                                       controller: imageController,
-                                      decoration: inputDecoration("Image URL"),
-                                      validator: (val) => val == null || val.isEmpty
-                                          ? "Enter image URL"
-                                          : null,
+                                      decoration: inputDecoration("Image URL",
+                                          icon: Icons.image),
+                                      validator: (val) =>
+                                          val == null || val.isEmpty
+                                              ? "Enter image URL"
+                                              : null,
                                     ),
                                     const SizedBox(height: 20),
                                     ElevatedButton.icon(
                                       icon: const Icon(Icons.add),
                                       label: const Text("Add Product"),
                                       style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size(double.infinity, 50),
+                                        minimumSize:
+                                            const Size(double.infinity, 50),
                                         shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12)),
+                                            borderRadius:
+                                                BorderRadius.circular(12)),
+                                        backgroundColor: primary,
                                       ),
                                       onPressed: submitProduct,
                                     ),
@@ -371,6 +384,14 @@ Padding(
                   ),
                 ),
             ],
-          );
-  }
+          ),
+
+    floatingActionButton: FloatingActionButton(
+      onPressed: showAddCategorySheet,
+      child: const Icon(Icons.add),
+      backgroundColor: primary,
+      tooltip: "Add Category",
+    ),
+  );
+}
 }

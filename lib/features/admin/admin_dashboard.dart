@@ -84,12 +84,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  Color orderStatusColor(String status) {
+  Color orderStatusColor(String status, Color primary) {
     switch (status) {
       case 'NEW':
-        return Colors.green.shade100;
+        return primary.withOpacity(0.2);
       case 'IN_PROGRESS':
-        return Colors.yellow.shade100;
+        return Colors.orange.withOpacity(0.2);
       case 'DONE':
         return Colors.grey.shade200;
       default:
@@ -97,102 +97,85 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
- 
   Widget buildSidebar(
-  Color sidebarColor,
-  Color selectedColor,
-  String appName,
-  String appLogo,
-) {
-  return Container(
-    width: 220,
-    color: sidebarColor,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 40),
-
-        // LOGO + APP NAME
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Colors.white,
-                backgroundImage: appLogo.isNotEmpty
-                    ? NetworkImage(appLogo)
-                    : null,
-                child: appLogo.isEmpty
-                    ? Icon(Icons.restaurant, color: sidebarColor, size: 30)
-                    : null,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  appName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 30),
-
-        buildSidebarButton(Icons.fastfood, "Products", selectedColor),
-        buildSidebarButton(Icons.add, "Add Product", selectedColor),
-        buildSidebarButton(Icons.settings, "Config", selectedColor),
-        buildSidebarButton(Icons.list_alt, "Incoming Orders", selectedColor),
-        buildSidebarButton(Icons.history, "Order History", selectedColor),
-        buildSidebarButton(Icons.qr_code, "Menu QR Code", selectedColor),
-        buildSidebarButton(Icons.menu, "Menu", selectedColor),
-
-        const Spacer(),
-
-        buildSidebarButton(Icons.logout, "Logout", selectedColor),
-        const SizedBox(height: 20),
-      ],
-    ),
-  );
-}
-
-  Widget buildSidebarButton(
-  IconData icon,
-  String label,
-  Color selectedColor,
-) {
-  bool isSelected = selectedSection == label;
-
-  return InkWell(
-    onTap: () {
-      setState(() {
-        selectedSection = label;
-        showProductSlide = false;
-      });
-    },
-    child: Container(
-      color: isSelected ? selectedColor : Colors.transparent,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+      Color sidebarColor, Color selectedColor, String appName, String appLogo) {
+    return Container(
+      width: 220,
+      color: sidebarColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+          const SizedBox(height: 40),
+          // LOGO + APP NAME
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.white,
+                  backgroundImage: appLogo.isNotEmpty ? NetworkImage(appLogo) : null,
+                  child: appLogo.isEmpty
+                      ? Icon(Icons.restaurant, color: sidebarColor, size: 30)
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    appName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 30),
+          buildSidebarButton(Icons.fastfood, "Products", selectedColor),
+          buildSidebarButton(Icons.add, "Add Product", selectedColor),
+          buildSidebarButton(Icons.settings, "Config", selectedColor),
+          buildSidebarButton(Icons.list_alt, "Incoming Orders", selectedColor),
+          buildSidebarButton(Icons.history, "Order History", selectedColor),
+          buildSidebarButton(Icons.qr_code, "Menu QR Code", selectedColor),
+          buildSidebarButton(Icons.menu, "Menu", selectedColor),
+          const Spacer(),
+          buildSidebarButton(Icons.logout, "Logout", selectedColor),
+          const SizedBox(height: 20),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
+  Widget buildSidebarButton(IconData icon, String label, Color selectedColor) {
+    bool isSelected = selectedSection == label;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          selectedSection = label;
+          showProductSlide = false;
+        });
+      },
+      child: Container(
+        color: isSelected ? selectedColor.withOpacity(0.8) : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void openProductSlide(Product p) {
     setState(() {
@@ -251,16 +234,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  InputDecoration inputDecoration(String label) {
+  InputDecoration inputDecoration(String label, Color primary) {
     return InputDecoration(
       labelText: label,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey)),
+          borderSide: BorderSide(color: primary.withOpacity(0.5))),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.blue)),
+          borderSide: BorderSide(color: primary)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     );
   }
@@ -269,28 +252,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     final config = context.watch<ConfigProvider>();
 
-  final Color sidebarColor =
-      config.primaryColor ?? Colors.blue.shade700;
+    final Color sidebarColor = config.primaryColor ?? Colors.blue.shade700;
+    final Color selectedColor = config.secondaryColor ?? Colors.blue.shade900;
+    final Color primary = config.primaryColor ?? Colors.blue.shade700;
+    final Color secondary = config.secondaryColor ?? Colors.blue.shade500;
 
-  final Color selectedColor =
-      config.secondaryColor ?? Colors.blue.shade900;
-
-  final String appName =
-      config.appName ?? "Admin Panel";
-
-  final String appLogo =
-      config.appLogo;
+    final String appName = config.appName ?? "Admin Panel";
+    final String appLogo = config.appLogo;
 
     return Scaffold(
       body: Row(
         children: [
-          // buildSidebar(),
-          buildSidebar(
-      sidebarColor,
-      selectedColor,
-      appName,
-      appLogo,
-    ),
+          buildSidebar(sidebarColor, selectedColor, appName, appLogo),
           Expanded(
             child: Column(
               children: [
@@ -307,9 +280,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       },
                       decoration: InputDecoration(
                         hintText: "Search products...",
-                        prefixIcon: const Icon(Icons.search),
+                        prefixIcon: Icon(Icons.search, color: primary),
                         filled: true,
-                        fillColor: Colors.grey.shade200,
+                        fillColor: Colors.grey.shade100,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -322,8 +295,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Expanded(
                   child: Stack(
                     children: [
-                      buildMainContent(),
-                      if (showProductSlide) buildProductSlide(),
+                      buildMainContent(primary, secondary),
+                      if (showProductSlide) buildProductSlide(primary, secondary),
                     ],
                   ),
                 ),
@@ -335,7 +308,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget buildMainContent() {
+  Widget buildMainContent(Color primary, Color secondary) {
     final productsByCategory =
         Provider.of<ProductProvider>(context).productsByCategory;
     final orders = Provider.of<OrderProvider>(context).orders;
@@ -345,28 +318,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     switch (selectedSection) {
       case "Products":
-        return buildProductsView(productsByCategory);
+        return buildProductsView(productsByCategory, primary, secondary);
       case "Menu":
-  return MenuPage(
-    restaurantId: "rest_001", // same ID used for QR
-  );
+        return MenuPage(restaurantId: "rest_001");
       case "Add Product":
-        return const Padding(
-          padding: EdgeInsets.all(16),
-          child: AddProductPanel(),
-        );
-        case  "Config":
-        return const Padding(
-          padding: EdgeInsets.all(16),
-          child: ConfigPage(),
-        );
-
+        return const Padding(padding: EdgeInsets.all(16), child: AddProductPanel());
+      case "Config":
+        return const Padding(padding: EdgeInsets.all(16), child: ConfigPage());
       case "Incoming Orders":
-        return buildOrdersView(orders, "Incoming Orders");
+        return buildOrdersView(orders, "Incoming Orders", primary);
       case "Order History":
-        // return buildOrdersView(orderHistory, "Order History");
-        return const Padding(padding: EdgeInsets.all(16),child: OrdersPage(),);
-
+        return const Padding(padding: EdgeInsets.all(16), child: OrdersPage());
       case "Menu QR Code":
         return Padding(
           padding: const EdgeInsets.all(16),
@@ -379,69 +341,69 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return Center(
           child: Text(
             selectedSection,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary),
           ),
         );
     }
   }
+Widget buildProductsView(
+    Map<String, List<Product>> productsByCategory, Color primary, Color secondary) {
+  if (productsByCategory.isEmpty) return const Center(child: Text("No products available"));
 
-  Widget buildProductsView(Map<String, List<Product>> productsByCategory) {
-    if (productsByCategory.isEmpty)
-      return const Center(child: Text("No products available"));
+  Map<String, List<Product>> filtered = {};
+  productsByCategory.forEach((category, items) {
+    final filteredItems = items
+        .where((p) => p.name.toLowerCase().contains(searchQuery))
+        .toList();
+    if (filteredItems.isNotEmpty) filtered[category] = filteredItems;
+  });
 
-    // Filter products based on search query
-    Map<String, List<Product>> filtered = {};
-    productsByCategory.forEach((category, items) {
-      final filteredItems = items
-          .where((p) => p.name.toLowerCase().contains(searchQuery))
-          .toList();
-      if (filteredItems.isNotEmpty) filtered[category] = filteredItems;
-    });
+  return SingleChildScrollView(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: filtered.entries.map((entry) {
+        final categoryName = entry.key;
+        final items = entry.value;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: filtered.entries.map((entry) {
-          final categoryName = entry.key;
-          final items = entry.value;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  categoryName,
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue),
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              decoration: BoxDecoration(
+                color: primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(5),
               ),
-              const SizedBox(height: 8),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: items.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 0.65,
-                ),
-                itemBuilder: (context, index) {
-                  final p = items[index];
-                  return GestureDetector(
-                    onDoubleTap: () => openProductSlide(p),
+              child: Text(
+                categoryName,
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold, color: primary),
+              ),
+            ),
+            const SizedBox(height: 8),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 1, // Square cards
+              ),
+              itemBuilder: (context, index) {
+                final p = items[index];
+                return GestureDetector(
+                  onDoubleTap: () => openProductSlide(p),
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
                     child: Card(
-                      elevation: 2,
+                      elevation: 3,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
+                      shadowColor: primary.withOpacity(0.4),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -457,21 +419,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.all(6.0),
+                            padding: const EdgeInsets.all(4.0),
                             child: Column(
                               children: [
                                 Text(
                                   p.name,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 14),
-                                  maxLines: 2,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: primary),
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 2),
                                 Text(
-                                  "\$${p.price.toStringAsFixed(2)}",
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
+                                  "${p.price.toStringAsFixed(2)} ETB",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 10,
+                                      color: secondary),
                                 ),
                               ],
                             ),
@@ -479,18 +446,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        );
+      }).toList(),
+    ),
+  );
+}
 
-  Widget buildProductSlide() {
+  Widget buildProductSlide(Color primary, Color secondary) {
     if (selectedProduct == null) return const SizedBox.shrink();
     return Positioned(
       top: 0,
@@ -507,13 +475,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Product Details",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primary),
                   ),
                   IconButton(
                       onPressed: () => setState(() => showProductSlide = false),
-                      icon: const Icon(Icons.close))
+                      icon: Icon(Icons.close, color: primary))
                 ],
               ),
               const SizedBox(height: 12),
@@ -525,18 +496,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: nameController,
-                decoration: inputDecoration("Product Name"),
+                decoration: inputDecoration("Product Name", primary),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: priceController,
-                decoration: inputDecoration("Price"),
+                decoration: inputDecoration("Price", primary),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: imageController,
-                decoration: inputDecoration("Image URL"),
+                decoration: inputDecoration("Image URL", primary),
               ),
               const SizedBox(height: 20),
               Row(
@@ -545,6 +516,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.update),
                       label: const Text("Update"),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: primary),
                       onPressed: updateProduct,
                     ),
                   ),
@@ -553,7 +526,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.delete),
                       label: const Text("Delete"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style:
+                          ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       onPressed: () => deleteProduct(selectedProduct!),
                     ),
                   ),
@@ -566,7 +540,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget buildOrdersView(List orders, String title) {
+  Widget buildOrdersView(List orders, String title, Color primary) {
     if (orders.isEmpty) return Center(child: Text("No $title"));
 
     return SingleChildScrollView(
@@ -575,7 +549,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: orders.map<Widget>((o) {
           return Card(
-            color: orderStatusColor(o.status),
+            color: orderStatusColor(o.status, primary),
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: ListTile(
               title: Text("Table: ${o.table}"),

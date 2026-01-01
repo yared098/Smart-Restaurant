@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_restaurant/core/models/order.dart';
 import 'package:smart_restaurant/core/providers/kitchen_provider.dart';
+import 'package:smart_restaurant/core/providers/config_provider.dart';
 
 class HostessPage extends StatefulWidget {
   const HostessPage({super.key});
@@ -23,6 +24,10 @@ class _HostessPageState extends State<HostessPage> {
 
   @override
   Widget build(BuildContext context) {
+    final config = context.watch<ConfigProvider>();
+    final primaryColor = config.primaryColor ?? Colors.blue;
+    final secondaryColor = config.secondaryColor ?? Colors.orange;
+
     final orders = context.watch<KitchenProvider>().orders;
 
     final filteredOrders = orders.where((o) {
@@ -33,8 +38,9 @@ class _HostessPageState extends State<HostessPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
+        foregroundColor: Colors.white,
         title: const Text("Hostess Dashboard"),
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: primaryColor,
       ),
       body: Stack(
         children: [
@@ -68,7 +74,7 @@ class _HostessPageState extends State<HostessPage> {
                         itemCount: filteredOrders.length,
                         itemBuilder: (_, i) {
                           final o = filteredOrders[i];
-                          final color = _statusColor(o.status);
+                          final color = _statusColor(o.status, primaryColor, secondaryColor);
 
                           return GestureDetector(
                             onTap: () => setState(() => selectedOrder = o),
@@ -203,18 +209,18 @@ class _HostessPageState extends State<HostessPage> {
             ],
           ),
           // Detail panel
-          if (selectedOrder != null) _orderDetailPanel(selectedOrder!)
+          if (selectedOrder != null) _orderDetailPanel(selectedOrder!, primaryColor, secondaryColor)
         ],
       ),
     );
   }
 
-  MaterialColor _statusColor(String status) {
+  MaterialColor _statusColor(String status, Color primary, Color secondary) {
     switch (status) {
       case "NEW":
-        return Colors.green;
+        return primary is MaterialColor ? primary : Colors.green;
       case "COOKING":
-        return Colors.orange;
+        return secondary is MaterialColor ? secondary : Colors.orange;
       case "ON THE WAY":
         return Colors.blue;
       case "DONE":
@@ -222,7 +228,7 @@ class _HostessPageState extends State<HostessPage> {
       case "REJECTED":
         return Colors.red;
       default:
-        return Colors.blue;
+        return primary is MaterialColor ? primary : Colors.blue;
     }
   }
 
@@ -235,8 +241,8 @@ class _HostessPageState extends State<HostessPage> {
     return "${date.day}/${date.month}/${date.year}";
   }
 
-  Widget _orderDetailPanel(Order order) {
-    final color = _statusColor(order.status);
+  Widget _orderDetailPanel(Order order, Color primary, Color secondary) {
+    final color = _statusColor(order.status, primary, secondary);
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       top: 0,
@@ -282,9 +288,7 @@ class _HostessPageState extends State<HostessPage> {
                         .toList(),
                     onChanged: (v) {
                       if (v != null) {
-                        // Use provider method to update status with backend sync
                         context.read<KitchenProvider>().updateOrderStatus(order.id, v);
-                        // Optimistically update detail panel
                         setState(() {
                           selectedOrder = order.copyWith(status: v, updatedAt: DateTime.now());
                         });

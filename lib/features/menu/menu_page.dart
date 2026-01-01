@@ -6,6 +6,7 @@ import '../../core/models/product.dart';
 import '../../core/models/order.dart';
 import '../../core/providers/product_provider.dart';
 import '../../core/providers/order_provider.dart';
+import '../../core/providers/config_provider.dart';
 import '../../core/services/api_service.dart';
 
 class MenuPage extends StatefulWidget {
@@ -57,7 +58,6 @@ class _MenuPageState extends State<MenuPage>
     if (_cart.isEmpty) return;
 
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
-
     final orderData = {
       "restaurantId": widget.restaurantId,
       "receiver": "Guest",
@@ -108,10 +108,10 @@ class _MenuPageState extends State<MenuPage>
     }
   }
 
-  /// --------------------------
-  /// Show Cart in BottomSheet
-  /// --------------------------
   void _showCartBottomSheet() {
+    final config = context.read<ConfigProvider>();
+    final primaryColor = config.primaryColor ?? Colors.deepOrange;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -179,6 +179,9 @@ class _MenuPageState extends State<MenuPage>
                           placeOrder();
                           Navigator.pop(context);
                         },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                  ),
                   child: const Text("Order Now"),
                 )
               ],
@@ -191,17 +194,25 @@ class _MenuPageState extends State<MenuPage>
 
   @override
   Widget build(BuildContext context) {
+    final config = context.watch<ConfigProvider>();
+    final primaryColor = config.primaryColor ?? Colors.deepOrange;
+    final secondaryColor = config.secondaryColor ?? Colors.orange;
+
     final productsByCategory =
         Provider.of<ProductProvider>(context).productsByCategory;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Restaurant Menu"),
+        backgroundColor: primaryColor,
         bottom: loading
             ? null
             : TabBar(
                 controller: _tabController,
                 isScrollable: true,
+                indicatorColor: secondaryColor,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
                 tabs: productsByCategory.keys
                     .map((c) => Tab(text: c))
                     .toList(),
@@ -219,7 +230,7 @@ class _MenuPageState extends State<MenuPage>
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final p = items[index];
-                    return _productTile(p);
+                    return _productTile(p, primaryColor, secondaryColor);
                   },
                 );
               }).toList(),
@@ -227,6 +238,7 @@ class _MenuPageState extends State<MenuPage>
       floatingActionButton: _cart.isEmpty
           ? null
           : FloatingActionButton.extended(
+              backgroundColor: primaryColor,
               icon: const Icon(Icons.shopping_cart),
               label: Text("${_cart.length}"),
               onPressed: _showCartBottomSheet,
@@ -234,7 +246,7 @@ class _MenuPageState extends State<MenuPage>
     );
   }
 
-  Widget _productTile(Product p) {
+  Widget _productTile(Product p, Color primary, Color secondary) {
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -250,6 +262,7 @@ class _MenuPageState extends State<MenuPage>
           SnackBar(
             content: Text("${p.name} added to cart"),
             behavior: SnackBarBehavior.floating,
+            backgroundColor: primary,
           ),
         );
       },
@@ -288,14 +301,17 @@ class _MenuPageState extends State<MenuPage>
                   children: [
                     Text(
                       p.name,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       "${p.price} ETB",
                       style: TextStyle(
-                        color: Colors.grey.shade700,
+                        color: secondary,
                         fontSize: 14,
                       ),
                     ),
@@ -314,6 +330,7 @@ class _MenuPageState extends State<MenuPage>
                           });
                         },
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
