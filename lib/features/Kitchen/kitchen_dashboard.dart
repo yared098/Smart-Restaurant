@@ -42,8 +42,10 @@ class _KitchenDashboardState extends State<KitchenDashboard> {
         final isLargeScreen = constraints.maxWidth >= 800;
 
         return Scaffold(
+          
           backgroundColor: Colors.grey.shade100,
           appBar: AppBar(
+            foregroundColor: Colors.white,
             title: const Text("Kitchen Dashboard"),
             backgroundColor: primaryColor,
             actions: [
@@ -268,85 +270,251 @@ class _KitchenDashboardState extends State<KitchenDashboard> {
     );
   }
 
-  // ------------------ Resources Panel ------------------
-  Widget _resourcesPanel(Color primaryColor) {
-    final provider = context.watch<ResourceProvider>();
+ // ------------------ Resources Panel ------------------
+Widget _resourcesPanel(Color primaryColor) {
+  final provider = context.watch<ResourceProvider>();
+  final filteredResources = provider.resources
+      .where((res) => res['name']
+          .toString()
+          .toLowerCase()
+          .contains(searchText.toLowerCase()))
+      .toList();
 
-    return provider.loading
-        ? const Center(child: CircularProgressIndicator())
-        : provider.resources.isEmpty
-            ? const Center(child: Text("No resources available"))
-            : ListView.builder(
-                itemCount: provider.resources.length,
-                itemBuilder: (_, index) {
-                  final res = provider.resources[index];
-                  final resId = res['id'] ?? '';
-                  final unit = res['unit'] ?? '';
+  return Column(
+    children: [
+      // Search bar
+      Padding(
+        padding: const EdgeInsets.all(8),
+        child: TextField(
+          onChanged: (v) => setState(() => searchText = v),
+          decoration: InputDecoration(
+            hintText: "Search resources...",
+            prefixIcon: const Icon(Icons.search, size: 20),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          ),
+          style: const TextStyle(fontSize: 14),
+        ),
+      ),
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: ListTile(
-                      leading: res['imageUrl'] != null && res['imageUrl'].isNotEmpty
-                          ? ClipOval(
-                              child: Image.network(
-                                res['imageUrl'],
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => CircleAvatar(
-                                  backgroundColor: Colors.grey[300],
-                                  child: const Icon(Icons.broken_image),
-                                ),
-                              ),
-                            )
-                          : CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.grey[300],
-                              child: const Icon(Icons.inventory),
-                            ),
-                      title: Text(res['name'] ?? ''),
-                      subtitle:
-                          Text("Available: ${res['quantity'] ?? 0} $unit"),
-                      trailing: SizedBox(
-                        width: 120,
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: requestCart[resId] != null &&
-                                      requestCart[resId]! > 0
-                                  ? () {
-                                      setState(() {
-                                        requestCart[resId] = requestCart[resId]! - 1;
-                                        if (requestCart[resId] == 0) {
-                                          requestCart.remove(resId);
-                                          selectedResources.remove(resId);
-                                        }
-                                      });
-                                    }
-                                  : null,
-                            ),
-                            Text(requestCart[resId]?.toString() ?? '0'),
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () {
-                                setState(() {
-                                  final qty = requestCart[resId] ?? 0;
-                                  if (qty < (res['quantity'] ?? 1000)) {
-                                    requestCart[resId] = qty + 1;
-                                    selectedResources[resId] = res;
-                                  }
-                                });
-                              },
-                            ),
-                          ],
-                        ),
+      // Selected resources (cart) preview + request button
+      if (requestCart.isNotEmpty)
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Cart items
+              SizedBox(
+                height: 70,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: requestCart.entries.map((entry) {
+                    final res = selectedResources[entry.key];
+                    return Container(
+                      margin:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: primaryColor, width: 1),
                       ),
+                      child: Row(
+                        children: [
+                          Text(
+                            "${res?['name'] ?? ''} x${entry.value}",
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                requestCart.remove(entry.key);
+                                selectedResources.remove(entry.key);
+                              });
+                            },
+                            child:
+                                const Icon(Icons.close, size: 16, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              // Request Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: provider.loading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.send),
+                    label: const Text("Request Resources"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
-                  );
-                },
-              );
-  }
+                    onPressed: provider.loading
+                        ? null
+                        : () async {
+                            if (requestCart.isEmpty) return;
+
+                            try {
+                              // Prepare items for the request
+                              final items = requestCart.entries.map((entry) {
+                                final res = selectedResources[entry.key];
+                                return {
+                                  "id": entry.key,
+                                  "name": res?['name'] ?? "",
+                                  "quantity": entry.value,
+                                };
+                              }).toList();
+
+                              // Call provider to create request
+                              await provider.createRequest(items, note: "From Kitchen");
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Resources requested successfully!"),
+                                ),
+                              );
+
+                              // Clear local cart
+                              setState(() {
+                                requestCart.clear();
+                                selectedResources.clear();
+                              });
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Error requesting resources: $e"),
+                                ),
+                              );
+                            }
+                          },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+      // Resource list
+      Expanded(
+        child: provider.loading
+            ? const Center(child: CircularProgressIndicator())
+            : filteredResources.isEmpty
+                ? const Center(child: Text("No resources available"))
+                : ListView.builder(
+                    itemCount: filteredResources.length,
+                    itemBuilder: (_, index) {
+                      final res = filteredResources[index];
+                      final resId = res['id'] ?? '';
+                      final unit = res['unit'] ?? '';
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          leading: res['imageUrl'] != null &&
+                                  res['imageUrl'].isNotEmpty
+                              ? ClipOval(
+                                  child: Image.network(
+                                    res['imageUrl'],
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => CircleAvatar(
+                                      backgroundColor: Colors.grey[300],
+                                      child: const Icon(Icons.broken_image),
+                                    ),
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 25,
+                                  backgroundColor: Colors.grey[300],
+                                  child: const Icon(Icons.inventory),
+                                ),
+                          title: Text(res['name'] ?? '',
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text("Available: ${res['quantity'] ?? 0} $unit"),
+                          trailing: SizedBox(
+                            width: 120,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove),
+                                  onPressed: requestCart[resId] != null &&
+                                          requestCart[resId]! > 0
+                                      ? () {
+                                          setState(() {
+                                            requestCart[resId] =
+                                                requestCart[resId]! - 1;
+                                            if (requestCart[resId] == 0) {
+                                              requestCart.remove(resId);
+                                              selectedResources.remove(resId);
+                                            }
+                                          });
+                                        }
+                                      : null,
+                                ),
+                                Text(requestCart[resId]?.toString() ?? '0'),
+                                IconButton(
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () {
+                                    setState(() {
+                                      final qty = requestCart[resId] ?? 0;
+                                      if (qty < (res['quantity'] ?? 1000)) {
+                                        requestCart[resId] = qty + 1;
+                                        selectedResources[resId] = res;
+                                      }
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+      ),
+    ],
+  );
+}
 
   // ------------------ Helpers ------------------
   MaterialColor _statusColor(String status, Color primary, Color secondary) {
