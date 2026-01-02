@@ -4,6 +4,8 @@ import 'package:smart_restaurant/features/config/ConfigPage.dart';
 import 'package:smart_restaurant/features/menu/menu_page.dart';
 import 'package:smart_restaurant/features/orders/orders_page.dart';
 import 'package:smart_restaurant/core/providers/config_provider.dart';
+import 'package:smart_restaurant/features/resource/admin_human_resources_page.dart';
+import 'package:smart_restaurant/features/resource/admin_resources_page.dart';
 
 import '../../core/providers/order_provider.dart';
 import '../../core/providers/product_provider.dart';
@@ -138,7 +140,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           buildSidebarButton(Icons.fastfood, "Products", selectedColor),
           buildSidebarButton(Icons.add, "Add Product", selectedColor),
           buildSidebarButton(Icons.settings, "Config", selectedColor),
-          buildSidebarButton(Icons.list_alt, "Incoming Orders", selectedColor),
+          buildSidebarButton(Icons.settings, "Resource Mg", selectedColor),
+            buildSidebarButton(Icons.settings, "Resource human", selectedColor),
+         
+
           buildSidebarButton(Icons.history, "Order History", selectedColor),
           buildSidebarButton(Icons.qr_code, "Menu QR Code", selectedColor),
           buildSidebarButton(Icons.menu, "Menu", selectedColor),
@@ -319,14 +324,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
     switch (selectedSection) {
       case "Products":
         return buildProductsView(productsByCategory, primary, secondary);
+      case "Resource Mg":
+        return AdminResourcesPage();
+        // Resource Mg
+       case "Resource human":
+        return AdminHumanResourcesPage();
       case "Menu":
         return MenuPage(restaurantId: "rest_001");
       case "Add Product":
         return const Padding(padding: EdgeInsets.all(16), child: AddProductPanel());
       case "Config":
         return const Padding(padding: EdgeInsets.all(16), child: ConfigPage());
-      case "Incoming Orders":
-        return buildOrdersView(orders, "Incoming Orders", primary);
+     
       case "Order History":
         return const Padding(padding: EdgeInsets.all(16), child: OrdersPage());
       case "Menu QR Code":
@@ -540,24 +549,4 @@ Widget buildProductsView(
     );
   }
 
-  Widget buildOrdersView(List orders, String title, Color primary) {
-    if (orders.isEmpty) return Center(child: Text("No $title"));
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: orders.map<Widget>((o) {
-          return Card(
-            color: orderStatusColor(o.status, primary),
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            child: ListTile(
-              title: Text("Table: ${o.table}"),
-              subtitle: Text("Items: ${o.items.join(", ")}\nStatus: ${o.status}"),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
 }

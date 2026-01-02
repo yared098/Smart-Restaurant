@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_restaurant/core/services/notification_service.dart';
 import '../models/order.dart';
 import '../services/socket_service.dart';
 
@@ -14,28 +15,20 @@ class OrderProvider with ChangeNotifier {
   List<Order> get orderHistory => _orderHistory;
 
   Future<void> init(String restaurantId) async {
-    await fetchOrderHistory(restaurantId);
+   
     _listenToNewOrders();
     _listenToCategoryOrders();
   }
 
-  Future<void> fetchOrderHistory(String restaurantId) async {
-    try {
-      final fetchedOrders = await socketService.fetchOrders();
-      final historyOrders =
-          fetchedOrders.map((json) => Order.fromJson(json)).toList();
-
-      _orderHistory = historyOrders;
-      for (var order in _orderHistory) addOrder(order);
-
-      notifyListeners();
-    } catch (e) {
-      print("Error fetching order history: $e");
-    }
-  }
+ 
 
   void _listenToNewOrders() {
     socketService.onNewOrder((data) {
+      // Show notification
+  NotificationService.showNotification(
+    title: "New Order",
+    body: "Order #${data['id'] ?? ''} has been placed",
+  );
       addOrderFromJson(data['order']);
     });
   }

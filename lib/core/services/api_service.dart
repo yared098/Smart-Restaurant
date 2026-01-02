@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 class ApiService {
-  final Dio dio = Dio(BaseOptions(baseUrl: "http://localhost:3000/api"));
+  final Dio dio = Dio(BaseOptions(baseUrl: "http://localhost:3001/api"));
 
   /// Get all categories and menu items
   Future<List<dynamic>> getMenu() async {

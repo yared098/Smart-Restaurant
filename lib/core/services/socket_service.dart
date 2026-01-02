@@ -6,7 +6,7 @@ class SocketService {
   late IO.Socket socket;
   final String baseUrl;
 
-  SocketService({this.baseUrl = "http://localhost:3000/api"});
+  SocketService({this.baseUrl = "http://localhost:3001/api"});
 
   /// Connect to socket server
   void connect() {
@@ -32,20 +32,5 @@ class SocketService {
     socket.disconnect();
   }
 
-  /// Fetch all orders from backend
-  Future<List<dynamic>> fetchOrders() async {
-    try {
-      final response = await http.get(Uri.parse("$baseUrl/order/all"));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['orders'] ?? [];
-      } else {
-        print("Failed to fetch orders: ${response.statusCode}");
-        return [];
-      }
-    } catch (e) {
-      print("Error fetching orders: $e");
-      return [];
-    }
-  }
+ 
 }
