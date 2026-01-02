@@ -95,8 +95,7 @@ class ResourceProvider extends ChangeNotifier {
   // =========================
   // CREATE A RESOURCE REQUEST
   // =========================
-  Future<void> createRequest(List<Map<String, dynamic>> items,
-      {String note = ""}) async {
+  Future<void> createRequest(List<Map<String, dynamic>> items, {String note = ""}) async {
     try {
       final newReq = await _service.createResourceRequest(items, note: note);
       requests.add(Map<String, dynamic>.from(newReq['request']));

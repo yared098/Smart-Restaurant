@@ -1,94 +1,152 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:smart_restaurant/core/providers/resource_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_restaurant/core/providers/resource_provider.dart';
+import 'package:smart_restaurant/core/providers/config_provider.dart';
 
+class KitchenResourcesPage extends StatefulWidget {
+  @override
+  _KitchenResourcesPageState createState() => _KitchenResourcesPageState();
+}
 
-// class KitchenResourcePage extends StatefulWidget {
-//   @override
-//   _KitchenResourcePageState createState() => _KitchenResourcePageState();
-// }
+class _KitchenResourcesPageState extends State<KitchenResourcesPage> {
+  Map<String, int> requestCart = {}; // resourceId -> quantity
+  Map<String, Map<String, dynamic>> selectedResources = {}; // id -> resource
 
-// class _KitchenResourcePageState extends State<KitchenResourcePage> {
-//   Map<String, int> selectedItems = {}; // resourceId -> quantity
+  @override
+  void initState() {
+    super.initState();
+    final provider = Provider.of<ResourceProvider>(context, listen: false);
+    provider.fetchResources();
+  }
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     final provider = Provider.of<ResourceProvider>(context, listen: false);
-//     provider.fetchResources();
-//   }
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<ResourceProvider>(context);
+    final config = Provider.of<ConfigProvider>(context);
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Kitchen Resources")),
-//       body: Consumer<ResourceProvider>(
-//         builder: (context, provider, _) {
-//           if (provider.loading) return Center(child: CircularProgressIndicator());
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Kitchen Resources"),
+        backgroundColor: config.primaryColor ?? Colors.blue,
+      ),
+      body: provider.loading
+          ? const Center(child: CircularProgressIndicator())
+          : provider.resources.isEmpty
+              ? const Center(child: Text("No resources available"))
+              : ListView.builder(
+                  itemCount: provider.resources.length,
+                  itemBuilder: (_, index) {
+                    final res = provider.resources[index];
+                    final resId = res['id'] ?? '';
+                    final unit = res['unit'] ?? '';
 
-//           if (provider.resources.isEmpty) return Center(child: Text("No resources available"));
+                    return Card(
+                      margin:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: ListTile(
+                        leading: res['imageUrl'] != null &&
+                                res['imageUrl'].isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  res['imageUrl'],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => CircleAvatar(
+                                    backgroundColor: Colors.grey[300],
+                                    child: const Icon(Icons.broken_image),
+                                  ),
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Colors.grey[300],
+                                child: const Icon(Icons.inventory),
+                              ),
+                        title: Text(res['name'] ?? ''),
+                        subtitle: Text(
+                            "Available: ${res['quantity'] ?? 0} ${unit.toString()}"),
+                        trailing: SizedBox(
+                          width: 120,
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove),
+                                onPressed: requestCart[resId] != null &&
+                                        requestCart[resId]! > 0
+                                    ? () {
+                                        setState(() {
+                                          requestCart[resId] =
+                                              requestCart[resId]! - 1;
+                                          if (requestCart[resId] == 0) {
+                                            requestCart.remove(resId);
+                                            selectedResources.remove(resId);
+                                          }
+                                        });
+                                      }
+                                    : null,
+                              ),
+                              Text(requestCart[resId]?.toString() ?? '0'),
+                              IconButton(
+                                icon: const Icon(Icons.add),
+                                onPressed: () {
+                                  setState(() {
+                                    final qty = requestCart[resId] ?? 0;
+                                    if (qty < (res['quantity'] ?? 1000)) {
+                                      requestCart[resId] = qty + 1;
+                                      selectedResources[resId] = res;
+                                    }
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+      bottomNavigationBar: requestCart.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "${requestCart.length} item(s) in cart",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: config.primaryColor),
+                    onPressed: () async {
+                      // Prepare items for request
+                      final items = selectedResources.entries
+                          .map((e) => {
+                                "resourceId": e.key,
+                                "quantity": requestCart[e.key],
+                              })
+                          .toList();
 
-//           return ListView(
-//             children: provider.resources.map((res) {
-//               selectedItems.putIfAbsent(res['id'], () => 0);
-
-//               return Card(
-//                 margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-//                 child: ListTile(
-//                   title: Text(res['name']),
-//                   subtitle: Text("Available: ${res['quantity']} ${res['unit']}"),
-//                   trailing: SizedBox(
-//                     width: 100,
-//                     child: TextField(
-//                       keyboardType: TextInputType.number,
-//                       decoration: InputDecoration(
-//                         hintText: "0",
-//                         border: OutlineInputBorder(),
-//                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//                       ),
-//                       onChanged: (val) {
-//                         setState(() {
-//                           selectedItems[res['id']] = int.tryParse(val) ?? 0;
-//                         });
-//                       },
-//                     ),
-//                   ),
-//                 ),
-//               );
-//             }).toList(),
-//           );
-//         },
-//       ),
-//       floatingActionButton: FloatingActionButton.extended(
-//         label: Text("Send Request"),
-//         icon: Icon(Icons.send),
-//         onPressed: () async {
-//           final provider = Provider.of<ResourceProvider>(context, listen: false);
-
-//           // Build list of items with quantity > 0
-//           final itemsToSend = selectedItems.entries
-//               .where((e) => e.value > 0)
-//               .map((e) => {"resourceId": e.key, "quantity": e.value})
-//               .toList();
-
-//           if (itemsToSend.isEmpty) {
-//             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Select at least 1 resource")));
-//             return;
-//           }
-
-//           try {
-//             await provider.createRequest(itemsToSend, note: "Kitchen request");
-//             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Request sent")));
-            
-//             // Reset selected quantities
-//             setState(() {
-//               selectedItems = {};
-//             });
-//           } catch (e) {
-//             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to send request")));
-//           }
-//         },
-//       ),
-//     );
-//   }
-// }
+                      // Send request via provider
+                      await provider.createRequest(items, note: "Kitchen request");
+                      setState(() {
+                        requestCart.clear();
+                        selectedResources.clear();
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Request sent")),
+                      );
+                    },
+                    icon: const Icon(Icons.send),
+                    label: const Text("Send Request"),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}

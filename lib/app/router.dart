@@ -38,6 +38,7 @@
 // );
 
 import 'package:go_router/go_router.dart';
+import 'package:smart_restaurant/features/resource/kitchen_resource_page.dart';
 import 'package:smart_restaurant/features/splash/splash_page.dart';
 import 'package:smart_restaurant/features/config/ConfigPage.dart';
 import 'package:smart_restaurant/features/qr/qr_scanner_page.dart';
@@ -91,6 +92,11 @@ final router = GoRouter(
       path: '/kitchen',
       builder: (_, __) => const KitchenDashboardPage(),
     ),
+     GoRoute(
+      path: '/resource',
+      builder: (_, __) =>  KitchenResourcesPage(),
+    ),
+
 
     /// 🔹 Admin
     GoRoute(

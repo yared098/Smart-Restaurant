@@ -9,6 +9,7 @@ class ApiService {
     return res.data['categories'];
   }
 
+
   /// Get only categories
   Future<List<dynamic>> getCategories() async {
     final res = await dio.get("/menu/categories");

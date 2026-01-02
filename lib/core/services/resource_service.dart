@@ -14,7 +14,6 @@ class ResourceService {
     final response = await http.get(Uri.parse("$baseUrl/resources"));
 
     if (response.statusCode == 200) {
-      print("respose status code "+response.body.toString());
       return jsonDecode(response.body);
     } else {
       throw Exception("Failed to fetch resources: ${response.body}");
@@ -82,7 +81,7 @@ class ResourceService {
       body: jsonEncode({"items": items, "note": note}),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
       throw Exception("Failed to create request: ${response.body}");

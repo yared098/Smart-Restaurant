@@ -48,9 +48,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     socket.onNewOrder((data) {
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
       orderProvider.addOrderFromJson(data['order']);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("New Order Received!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("New Order Received!")));
     });
   }
 
@@ -75,12 +75,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
         }
       }
 
-      Provider.of<ProductProvider>(context, listen: false).setProducts(products);
+      Provider.of<ProductProvider>(
+        context,
+        listen: false,
+      ).setProducts(products);
     } catch (e) {
       debugPrint("Error fetching products: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to fetch products")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Failed to fetch products")));
     } finally {
       setState(() => loadingProducts = false);
     }
@@ -100,7 +103,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget buildSidebar(
-      Color sidebarColor, Color selectedColor, String appName, String appLogo) {
+    Color sidebarColor,
+    Color selectedColor,
+    String appName,
+    String appLogo,
+  ) {
     return Container(
       width: 220,
       color: sidebarColor,
@@ -116,7 +123,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.white,
-                  backgroundImage: appLogo.isNotEmpty ? NetworkImage(appLogo) : null,
+                  backgroundImage: appLogo.isNotEmpty
+                      ? NetworkImage(appLogo)
+                      : null,
                   child: appLogo.isEmpty
                       ? Icon(Icons.restaurant, color: sidebarColor, size: 30)
                       : null,
@@ -141,8 +150,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           buildSidebarButton(Icons.add, "Add Product", selectedColor),
           buildSidebarButton(Icons.settings, "Config", selectedColor),
           buildSidebarButton(Icons.settings, "Resource Mg", selectedColor),
-            buildSidebarButton(Icons.settings, "Resource human", selectedColor),
-         
+          buildSidebarButton(Icons.settings, "Resource human", selectedColor),
 
           buildSidebarButton(Icons.history, "Order History", selectedColor),
           buildSidebarButton(Icons.qr_code, "Menu QR Code", selectedColor),
@@ -201,9 +209,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
       );
       setState(() => showProductSlide = false);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to delete product")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Failed to delete product")));
     }
   }
 
@@ -227,15 +235,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
         "categoryId": updated.categoryId,
       });
 
-      Provider.of<ProductProvider>(context, listen: false).updateProduct(updated);
+      Provider.of<ProductProvider>(
+        context,
+        listen: false,
+      ).updateProduct(updated);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Product updated successfully")),
       );
       setState(() => showProductSlide = false);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to update product")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Failed to update product")));
     }
   }
 
@@ -244,11 +255,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
       labelText: label,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary.withOpacity(0.5))),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: primary.withOpacity(0.5)),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary)),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: primary),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     );
   }
@@ -301,7 +314,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: Stack(
                     children: [
                       buildMainContent(primary, secondary),
-                      if (showProductSlide) buildProductSlide(primary, secondary),
+                      if (showProductSlide)
+                        buildProductSlide(primary, secondary),
                     ],
                   ),
                 ),
@@ -314,28 +328,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget buildMainContent(Color primary, Color secondary) {
-    final productsByCategory =
-        Provider.of<ProductProvider>(context).productsByCategory;
+    final productsByCategory = Provider.of<ProductProvider>(
+      context,
+    ).productsByCategory;
     final orders = Provider.of<OrderProvider>(context).orders;
     final orderHistory = Provider.of<OrderProvider>(context).orderHistory;
 
-    if (loadingProducts) return const Center(child: CircularProgressIndicator());
+    if (loadingProducts)
+      return const Center(child: CircularProgressIndicator());
 
     switch (selectedSection) {
       case "Products":
         return buildProductsView(productsByCategory, primary, secondary);
       case "Resource Mg":
         return AdminResourcesPage();
-        // Resource Mg
-       case "Resource human":
+      // Resource Mg
+      case "Resource human":
         return AdminHumanResourcesPage();
       case "Menu":
         return MenuPage(restaurantId: "rest_001");
       case "Add Product":
-        return const Padding(padding: EdgeInsets.all(16), child: AddProductPanel());
+        return const Padding(
+          padding: EdgeInsets.all(16),
+          child: AddProductPanel(),
+        );
       case "Config":
         return const Padding(padding: EdgeInsets.all(16), child: ConfigPage());
-     
+
       case "Order History":
         return const Padding(padding: EdgeInsets.all(16), child: OrdersPage());
       case "Menu QR Code":
@@ -350,122 +369,137 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return Center(
           child: Text(
             selectedSection,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: primary,
+            ),
           ),
         );
     }
   }
-Widget buildProductsView(
-    Map<String, List<Product>> productsByCategory, Color primary, Color secondary) {
-  if (productsByCategory.isEmpty) return const Center(child: Text("No products available"));
 
-  Map<String, List<Product>> filtered = {};
-  productsByCategory.forEach((category, items) {
-    final filteredItems = items
-        .where((p) => p.name.toLowerCase().contains(searchQuery))
-        .toList();
-    if (filteredItems.isNotEmpty) filtered[category] = filteredItems;
-  });
+  Widget buildProductsView(
+    Map<String, List<Product>> productsByCategory,
+    Color primary,
+    Color secondary,
+  ) {
+    if (productsByCategory.isEmpty)
+      return const Center(child: Text("No products available"));
 
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      children: filtered.entries.map((entry) {
-        final categoryName = entry.key;
-        final items = entry.value;
+    Map<String, List<Product>> filtered = {};
+    productsByCategory.forEach((category, items) {
+      final filteredItems = items
+          .where((p) => p.name.toLowerCase().contains(searchQuery))
+          .toList();
+      if (filteredItems.isNotEmpty) filtered[category] = filteredItems;
+    });
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              decoration: BoxDecoration(
-                color: primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(5),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: filtered.entries.map((entry) {
+          final categoryName = entry.key;
+          final items = entry.value;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Text(
+                  categoryName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: primary,
+                  ),
+                ),
               ),
-              child: Text(
-                categoryName,
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold, color: primary),
-              ),
-            ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 1, // Square cards
-              ),
-              itemBuilder: (context, index) {
-                final p = items[index];
-                return GestureDetector(
-                  onDoubleTap: () => openProductSlide(p),
-                  child: SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      shadowColor: primary.withOpacity(0.4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(10)),
-                              child: Image.network(
-                                p.imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
+              const SizedBox(height: 8),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: items.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1, // Square cards
+                ),
+                itemBuilder: (context, index) {
+                  final p = items[index];
+                  return GestureDetector(
+                    onDoubleTap: () => openProductSlide(p),
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        shadowColor: primary.withOpacity(0.4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(10),
+                                ),
+                                child: Image.network(
+                                  p.imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                ),
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Column(
-                              children: [
-                                Text(
-                                  p.name,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
+                            Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    p.name,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
-                                      color: primary),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  "${p.price.toStringAsFixed(2)} ETB",
-                                  style: TextStyle(
+                                      color: primary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "${p.price.toStringAsFixed(2)} ETB",
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w500,
                                       fontSize: 10,
-                                      color: secondary),
-                                ),
-                              ],
+                                      color: secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
-        );
-      }).toList(),
-    ),
-  );
-}
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget buildProductSlide(Color primary, Color secondary) {
     if (selectedProduct == null) return const SizedBox.shrink();
@@ -487,20 +521,25 @@ Widget buildProductsView(
                   Text(
                     "Product Details",
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: primary),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primary,
+                    ),
                   ),
                   IconButton(
-                      onPressed: () => setState(() => showProductSlide = false),
-                      icon: Icon(Icons.close, color: primary))
+                    onPressed: () => setState(() => showProductSlide = false),
+                    icon: Icon(Icons.close, color: primary),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(selectedProduct!.imageUrl,
-                    height: 150, fit: BoxFit.cover),
+                child: Image.network(
+                  selectedProduct!.imageUrl,
+                  height: 150,
+                  fit: BoxFit.cover,
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -525,8 +564,7 @@ Widget buildProductsView(
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.update),
                       label: const Text("Update"),
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: primary),
+                      style: ElevatedButton.styleFrom(backgroundColor: primary),
                       onPressed: updateProduct,
                     ),
                   ),
@@ -535,8 +573,9 @@ Widget buildProductsView(
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.delete),
                       label: const Text("Delete"),
-                      style:
-                          ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
                       onPressed: () => deleteProduct(selectedProduct!),
                     ),
                   ),
@@ -548,5 +587,4 @@ Widget buildProductsView(
       ),
     );
   }
-
 }
