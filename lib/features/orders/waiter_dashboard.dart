@@ -8,14 +8,14 @@ import 'package:smart_restaurant/core/services/api_service.dart';
 import 'package:smart_restaurant/core/providers/config_provider.dart';
 
 
-class KitchenDashboardPage extends StatefulWidget {
-  const KitchenDashboardPage({super.key});
+class waiter_dashboard extends StatefulWidget {
+  const waiter_dashboard({super.key});
 
   @override
-  State<KitchenDashboardPage> createState() => _KitchenDashboardPageState();
+  State<waiter_dashboard> createState() => _waiter_dashboardState();
 }
 
-class _KitchenDashboardPageState extends State<KitchenDashboardPage> {
+class _waiter_dashboardState extends State<waiter_dashboard> {
   final ApiService api = ApiService();
   final TextEditingController searchCtrl = TextEditingController();
 
@@ -119,7 +119,7 @@ class _KitchenDashboardPageState extends State<KitchenDashboardPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: config.primaryColor,
-        title: const Text("Waite Dashboard"),
+        title: const Text("Waiter Dashboard"),
         foregroundColor: Colors.white,
         
         elevation: 0,
