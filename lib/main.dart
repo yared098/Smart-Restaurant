@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_restaurant/core/providers/auth_provider.dart';
 import 'package:smart_restaurant/core/providers/config_provider.dart';
 import 'package:smart_restaurant/core/providers/human_resource_provider.dart';
 import 'package:smart_restaurant/core/providers/kitchen_provider.dart';
@@ -36,7 +37,8 @@ void main() async {
           value: configProvider, // ✅ USE SAME INSTANCE
         ),
         
-         ChangeNotifierProvider(create: (_) => HumanResourceProvider()),
+        ChangeNotifierProvider(create: (_) => HumanResourceProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => ResourceProvider()),
         ChangeNotifierProvider(create: (_) => KitchenProvider(kitchenService: kitchenService)),

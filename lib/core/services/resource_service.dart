@@ -5,7 +5,7 @@ class ResourceService {
   // Use your LAN IP if testing on a physical device, or 10.0.2.2 for Android Emulator
   final String baseUrl;
 
-  ResourceService({this.baseUrl = "http://localhost:3001/api"});
+  ResourceService({this.baseUrl = "http://localhost:3000/api"});
 
   // =========================
   // GET all resources

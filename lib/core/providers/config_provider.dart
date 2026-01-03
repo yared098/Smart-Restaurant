@@ -106,8 +106,7 @@ void _applyConfig(Map<String, dynamic> data) {
         'secondaryColor': _colorToHex(secondaryColor),
         'welcomeMessage': welcomeMessage,
         'enableOrders': enableOrders,
-        'username': username,
-        'password': password,
+       
       }),
     );
   }

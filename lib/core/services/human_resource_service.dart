@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 class HumanResourceService {
   final String baseUrl;
 
-  HumanResourceService({this.baseUrl = "http://localhost:3001/api"});
+  HumanResourceService({this.baseUrl = "http://localhost:3000/api"});
 
   // =========================
   // GET all HR

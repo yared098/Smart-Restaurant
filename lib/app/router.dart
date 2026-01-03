@@ -1,4 +1,6 @@
 import 'package:go_router/go_router.dart';
+import 'package:smart_restaurant/GoRouterRefreshNotifier.dart';
+import 'package:smart_restaurant/features/account/login_page.dart';
 import 'package:smart_restaurant/features/resource/kitchen_resource_page.dart';
 import 'package:smart_restaurant/features/splash/splash_page.dart';
 import 'package:smart_restaurant/features/config/ConfigPage.dart';
@@ -15,19 +17,43 @@ final router = GoRouter(
   routes: [
     /// 🔹 Splash
     GoRoute(path: '/', builder: (_, __) => const SplashPage()),
+    
+    ///  login
+    
+    GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+
 
     /// 🔹 Config / Setup
     GoRoute(path: '/config', builder: (_, __) => const ConfigPage()),
 
     /// 🔹 Admin
-    GoRoute(path: '/admin', builder: (_, __) => const AdminDashboard()),
+    // GoRoute(path: '/admin', builder: (_, __) => const AdminDashboard()),
+    GoRoute(
+  path: '/admin',
+  builder: (_, __) => const AuthWrapper(
+    allowedRoles: ['admin'], 
+    child: AdminDashboard(),
+  ),
+),
 
     /// 🔹 Kitchen
-    GoRoute(path: '/kitchen', builder: (_, __) => const KitchenDashboard()),
-
+    // GoRoute(path: '/kitchen', builder: (_, __) => const KitchenDashboard()),
+      GoRoute(
+  path: '/kitchen',
+  builder: (_, __) => const AuthWrapper(
+    allowedRoles: ['kitchen'], 
+    child: KitchenDashboard(),
+  ),
+),
     /// 🔹 Kitchen
-    GoRoute(path: '/host', builder: (_, __) => const waiter_dashboard()),
-
+    // GoRoute(path: '/host', builder: (_, __) => const waiter_dashboard()),
+GoRoute(
+  path: '/host',
+  builder: (_, __) => const AuthWrapper(
+    allowedRoles: ['waiter'], 
+    child: waiter_dashboard(),
+  ),
+),
     /// 🔹 Menu
     GoRoute(
       path: '/menu/:restaurantId',
