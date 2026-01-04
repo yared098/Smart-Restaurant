@@ -12,21 +12,71 @@ class TablePage extends StatefulWidget {
 }
 
 class _TablePageState extends State<TablePage> {
+  bool _isSlideOpen = false;
+  bool _isAssignMode = false;
+  String? _assignTableId;
+
+  final TextEditingController _tableController = TextEditingController();
+  String? _selectedWaiterId;
+
+  bool _hrLoading = false;
+  List<Map<String, dynamic>> _waiters = [];
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tableProvider = context.read<TableProvider>();
-      tableProvider.fetchTables();
+      context.read<TableProvider>().fetchTables();
     });
   }
 
-  // Determine number of columns based on screen width
   int _calculateGridColumns(double width) {
-    if (width >= 1200) return 8; // large
-    if (width >= 800) return 4;  // medium
-    if (width >= 500) return 2;  // small
-    return 1;                     // extra small
+    if (width >= 1200) return 8;
+    if (width >= 800) return 4;
+    if (width >= 500) return 2;
+    return 1;
+  }
+
+  void _openAddTables() {
+    setState(() {
+      _isSlideOpen = true;
+      _isAssignMode = false;
+      _tableController.clear();
+    });
+  }
+
+  Future<void> _openAssignWaiter(String tableId) async {
+    setState(() {
+      _isSlideOpen = true;
+      _isAssignMode = true;
+      _assignTableId = tableId;
+      _selectedWaiterId = null;
+      _hrLoading = true;
+    });
+
+    try {
+      await context.read<HumanResourceProvider>().fetchHR();
+      final hrList = context
+          .read<HumanResourceProvider>()
+          .hrList
+          .where((hr) => hr['role'].toLowerCase() == "waiter")
+          .toList();
+      setState(() {
+        _waiters = List<Map<String, dynamic>>.from(hrList);
+        _hrLoading = false;
+      });
+    } catch (_) {
+      setState(() {
+        _waiters = [];
+        _hrLoading = false;
+      });
+    }
+  }
+
+  void _closeSlide() {
+    setState(() {
+      _isSlideOpen = false;
+    });
   }
 
   @override
@@ -48,164 +98,210 @@ class _TablePageState extends State<TablePage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: primary,
         child: const Icon(Icons.add),
-        onPressed: () => _showCreateDialog(context, primary),
+        onPressed: _openAddTables,
       ),
-      body: tableProvider.loading
-          ? const Center(child: CircularProgressIndicator())
-          : tableProvider.tables.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No tables available",
-                    style: TextStyle(fontSize: 18),
-                  ),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    final crossAxisCount =
-                        _calculateGridColumns(constraints.maxWidth);
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: GridView.builder(
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.2,
-                        ),
-                        itemCount: tableProvider.tables.length,
-                        itemBuilder: (_, index) {
-                          final table = tableProvider.tables[index];
-
-                          final waiter = hrProvider.hrList.firstWhere(
-                            (hr) =>
-                                hr['id'] == table.assignedWaiterId &&
-                                hr['role'].toLowerCase() == "waiter",
-                            orElse: () => null,
-                          );
-                          final waiterName = waiter != null
-                              ? (waiter['fullname'] ??
-                                  waiter['name'] ??
-                                  "Unknown")
-                              : null;
-
-                          return Card(
-                            elevation: 6,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                            color: secondary.withOpacity(0.2),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundColor: primary,
-                                        child: Text(
-                                          table.tableNumber.toString(),
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          "Table ${table.tableNumber}",
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    waiterName != null
-                                        ? "Assigned to: $waiterName"
-                                        : "No waiter assigned",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: waiterName != null
-                                          ? Colors.green[700]
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      if (waiterName != null)
-                                        IconButton(
-                                          icon: const Icon(Icons.clear,
-                                              color: Colors.red),
-                                          onPressed: () async {
-                                            try {
-                                              await tableProvider
-                                                  .unassignWaiter(table.id);
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        "Waiter unassigned")),
-                                              );
-                                            } catch (e) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content: Text(
-                                                        "Failed: $e")),
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      IconButton(
-                                        icon: Icon(Icons.person_add,
-                                            color: primary),
-                                        onPressed: () {
-                                          _showAssignDialog(
-                                              context, table.id, primary);
-                                        },
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+      body: Stack(
+        children: [
+          // Main Grid
+          tableProvider.loading
+              ? const Center(child: CircularProgressIndicator())
+              : tableProvider.tables.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "No tables available",
+                        style: TextStyle(fontSize: 18),
                       ),
-                    );
-                  },
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final crossAxisCount =
+                            _calculateGridColumns(constraints.maxWidth);
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GridView.builder(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.2,
+                            ),
+                            itemCount: tableProvider.tables.length,
+                            itemBuilder: (_, index) {
+                              final table = tableProvider.tables[index];
+
+                              final waiter = hrProvider.hrList.firstWhere(
+                                (hr) =>
+                                    hr['id'] == table.assignedWaiterId &&
+                                    hr['role'].toLowerCase() == "waiter",
+                                orElse: () => null,
+                              );
+                              final waiterName = waiter != null
+                                  ? (waiter['fullname'] ??
+                                      waiter['name'] ??
+                                      "Unknown")
+                                  : null;
+
+                              return Card(
+                                elevation: 6,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16)),
+                                color: secondary.withOpacity(0.2),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            backgroundColor: primary,
+                                            child: Text(
+                                              table.tableNumber.toString(),
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              "Table ${table.tableNumber}",
+                                              style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        waiterName != null
+                                            ? "Assigned to: $waiterName"
+                                            : "No waiter assigned",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: waiterName != null
+                                              ? Colors.green[700]
+                                              : Colors.red,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          if (waiterName != null)
+                                            IconButton(
+                                              icon: const Icon(Icons.clear,
+                                                  color: Colors.red),
+                                              onPressed: () async {
+                                                try {
+                                                  await tableProvider
+                                                      .unassignWaiter(
+                                                          table.id);
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                        content: Text(
+                                                            "Waiter unassigned")),
+                                                  );
+                                                } catch (e) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                        content: Text(
+                                                            "Failed: $e")),
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          IconButton(
+                                            icon: Icon(Icons.person_add,
+                                                color: primary),
+                                            onPressed: () {
+                                              _openAssignWaiter(table.id);
+                                            },
+                                          ),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+
+          // Right Side Slide Panel
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            top: 0,
+            bottom: 0,
+            right: _isSlideOpen ? 0 : -MediaQuery.of(context).size.width * 0.5,
+            width: MediaQuery.of(context).size.width * 0.5,
+            child: Material(
+              elevation: 20,
+              color: Colors.white,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: _isAssignMode
+                      ? _buildAssignForm(tableProvider, primary)
+                      : _buildAddTablesForm(tableProvider, primary),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  void _showCreateDialog(BuildContext context, Color primary) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Add Tables"),
-        content: TextField(
-          controller: controller,
+  Widget _buildAddTablesForm(TableProvider tableProvider, Color primary) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Add Tables",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: primary,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _closeSlide,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _tableController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            hintText: "Enter number of new tables (e.g. 10)",
+          decoration: InputDecoration(
+            labelText: "Number of tables",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            child: const Text("Cancel"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
+        const SizedBox(height: 20),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: primary),
             child: const Text("Add"),
             onPressed: () async {
-              final total = int.tryParse(controller.text);
+              final total = int.tryParse(_tableController.text);
               if (total == null || total <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Enter a valid number")),
@@ -213,75 +309,82 @@ class _TablePageState extends State<TablePage> {
                 return;
               }
 
-              final provider = context.read<TableProvider>();
-              provider.refreshToken();
-
+              tableProvider.refreshToken();
               try {
-                await provider.createTables(total);
-                Navigator.pop(context);
+                await tableProvider.createTables(total);
+                _closeSlide();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Tables added successfully")),
                 );
               } catch (e) {
-                Navigator.pop(context);
+                _closeSlide();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("Failed to add tables: $e")),
                 );
               }
             },
           ),
-        ],
-      ),
+        )
+      ],
     );
   }
 
-  void _showAssignDialog(
-      BuildContext context, String tableId, Color primary) {
-    final hrProvider = context.read<HumanResourceProvider>();
-    final tableProvider = context.read<TableProvider>();
-    String? selectedWaiterId;
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Assign Waiter"),
-        content: FutureBuilder(
-          future: hrProvider.fetchHR(),
-          builder: (context, snapshot) {
-            if (hrProvider.loading) return const Center(child: CircularProgressIndicator());
-            if (hrProvider.hrList.isEmpty) return const Text("No waiters available");
-
-            return DropdownButton<String>(
-              isExpanded: true,
-              value: selectedWaiterId,
-              hint: const Text("Select a waiter"),
-              items: hrProvider.hrList
-                  .where((hr) => hr['role'].toLowerCase() == "waiter")
-                  .map<DropdownMenuItem<String>>(
-                    (hr) => DropdownMenuItem(
-                      value: hr['id'],
-                      child: Text(hr['fullname'] ?? hr['name'] ?? "Unknown"),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedWaiterId = value;
-                });
-              },
-            );
-          },
+  Widget _buildAssignForm(TableProvider tableProvider, Color primary) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Assign Waiter",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: primary,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _closeSlide,
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            child: const Text("Cancel"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
+        const SizedBox(height: 20),
+        _hrLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _waiters.isEmpty
+                ? const Text("No waiters available")
+                : DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _selectedWaiterId,
+                    decoration: InputDecoration(
+                      labelText: "Select Waiter",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: _waiters
+                        .map((hr) => DropdownMenuItem<String>(
+                              value: hr['id'],
+                              child:
+                                  Text(hr['fullname'] ?? hr['name'] ?? "Unknown"),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedWaiterId = value;
+                      });
+                    },
+                  ),
+        const SizedBox(height: 20),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: primary),
             child: const Text("Assign"),
             onPressed: () async {
-              if (selectedWaiterId == null) {
+              if (_selectedWaiterId == null || _assignTableId == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Select a waiter")),
                 );
@@ -289,21 +392,21 @@ class _TablePageState extends State<TablePage> {
               }
 
               try {
-                await tableProvider.assignWaiter(tableId, selectedWaiterId!);
-                Navigator.pop(context);
+                await tableProvider.assignWaiter(_assignTableId!, _selectedWaiterId!);
+                _closeSlide();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Waiter assigned successfully")),
                 );
               } catch (e) {
-                Navigator.pop(context);
+                _closeSlide();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("Failed to assign waiter: $e")),
                 );
               }
             },
           ),
-        ],
-      ),
+        )
+      ],
     );
   }
 }
