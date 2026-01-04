@@ -3,14 +3,23 @@ import 'package:http/http.dart' as http;
 
 class HumanResourceService {
   final String baseUrl;
+  final String? token;
 
-  HumanResourceService({this.baseUrl = "http://localhost:3000/api"});
+  HumanResourceService({this.baseUrl = "http://localhost:3000/api", this.token});
+
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
 
   // =========================
   // GET all HR
   // =========================
   Future<List<dynamic>> getHR() async {
-    final response = await http.get(Uri.parse("$baseUrl/human-resources"));
+    final response = await http.get(
+      Uri.parse("$baseUrl/human-resources"),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -24,7 +33,7 @@ class HumanResourceService {
   Future<Map<String, dynamic>> addHR(Map<String, dynamic> data) async {
     final response = await http.post(
       Uri.parse("$baseUrl/human-resources"),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode(data),
     );
 
@@ -41,7 +50,7 @@ class HumanResourceService {
   Future<Map<String, dynamic>> updateHR(String id, Map<String, dynamic> data) async {
     final response = await http.put(
       Uri.parse("$baseUrl/human-resources/$id"),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode(data),
     );
 
@@ -58,7 +67,7 @@ class HumanResourceService {
   Future<Map<String, dynamic>> deleteHR(String id) async {
     final response = await http.delete(
       Uri.parse("$baseUrl/human-resources/$id"),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
     );
 
     if (response.statusCode == 200) {

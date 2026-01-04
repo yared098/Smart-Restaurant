@@ -6,7 +6,11 @@ import 'package:smart_restaurant/core/providers/config_provider.dart';
 enum Role { Kitchen, Waiter, Manager, Cashier }
 
 extension RoleExtension on Role {
-  String get name {
+  /// Value sent to / received from backend
+  String get value => name; // Kitchen, Waiter, Manager, Cashier
+
+  /// Label shown in UI
+  String get label {
     switch (this) {
       case Role.Kitchen:
         return "Kitchen Staff";
@@ -16,11 +20,18 @@ extension RoleExtension on Role {
         return "Manager";
       case Role.Cashier:
         return "Cashier";
-      default:
-        return "";
     }
   }
+
+  /// Convert backend string → enum
+  static Role fromBackend(String value) {
+    return Role.values.firstWhere(
+      (r) => r.name == value,
+      orElse: () => Role.Kitchen,
+    );
+  }
 }
+
 
 class AdminHumanResourcesPage extends StatefulWidget {
   @override

@@ -12,11 +12,37 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   bool _loading = false;
+  bool _obscurePassword = true;
   String? _error;
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animController =
+        AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
+    _slideAnim =
+        Tween(begin: const Offset(0, 0.2), end: Offset.zero).animate(_fadeAnim);
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   // ------------------ Clear Old Credentials ------------------
   void _clearCredentials() async {
@@ -24,206 +50,237 @@ class _LoginPageState extends State<LoginPage> {
     await prefs.remove('token');
     await prefs.remove('role');
 
-    // Also clear the provider state if needed
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
 
-    // Clear text fields
     _usernameController.clear();
     _passwordController.clear();
 
     setState(() {
-      _error = "Old credentials cleared!";
+      _error = "Old credentials cleared successfully.";
     });
-
-    print("✅ Old credentials cleared from SharedPreferences");
   }
 
-void _login() async {
-  setState(() {
-    _loading = true;
-    _error = null;
-  });
+  // ------------------ Login ------------------
+  void _login() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
-  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = context.read<AuthProvider>();
 
-  try {
-    await authProvider.login(
-      _usernameController.text,
-      _passwordController.text,
-    );
+    try {
+      await authProvider.login(
+        _usernameController.text.trim(),
+        _passwordController.text,
+      );
 
-    // Debug: print login info
-    print("Login role raw: '${authProvider.role}'");
+      final role = authProvider.role?.trim().toLowerCase() ?? "";
 
-    // Normalize role: trim spaces, lowercase
-    String role = authProvider.role?.trim().toLowerCase() ?? "";
-    print("Normalized role: '$role'");
-
-    // Navigate based on role
-    switch (role) {
-      case "admin":
-        context.go('/admin');
-        break;
-      case "kitchen":
-        context.go('/kitchen');
-        break;
-      case "waiter":
-        context.go('/host');
-        break;
-      default:
-        context.go('/scan');
+      switch (role) {
+        case "admin":
+          context.go('/admin');
+          break;
+        case "kitchen":
+          context.go('/kitchen');
+          break;
+        case "waiter":
+          context.go('/host');
+          break;
+        default:
+          context.go('/scan');
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceAll("Exception: ", "");
+      });
+    } finally {
+      setState(() {
+        _loading = false;
+      });
     }
-  } catch (e) {
-    print(e);
-    setState(() {
-      _error = e.toString().replaceAll("Exception: ", "");
-    });
-  } finally {
-    setState(() {
-      _loading = false;
-    });
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    final config = Provider.of<ConfigProvider>(context);
-
-    final primaryColor = config.primaryColor ?? Colors.blue;
-    final secondaryColor = config.secondaryColor ?? Colors.green;
+    final config = context.watch<ConfigProvider>();
+    final primary = config.primaryColor ?? Colors.blue;
+    final secondary = config.secondaryColor ?? Colors.green;
 
     return Scaffold(
-      backgroundColor: primaryColor.withOpacity(0.1),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Card(
-            elevation: 10,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            margin: const EdgeInsets.symmetric(horizontal: 30),
-            child: Padding(
-              padding: const EdgeInsets.all(25.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Logo / App Name
-                  if (config.appLogo.isNotEmpty)
-                    Image.network(config.appLogo, height: 80)
-                  else
-                    Text(
-                      config.appName ?? "Smart Restaurant",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
-                      ),
-                    ),
-                  const SizedBox(height: 20),
-                  Text(
-                    config.welcomeMessage ??
-                        "Welcome! Please login to continue.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[700], fontSize: 16),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              primary.withOpacity(0.9),
+              secondary.withOpacity(0.9),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Card(
+                  elevation: 18,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Username
-                  TextField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: "Username",
-                      prefixIcon: const Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Password
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      prefixIcon: const Icon(Icons.lock),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Error message
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
-
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Logo / Title
+                        if (config.appLogo.isNotEmpty)
+                          Image.network(config.appLogo, height: 70)
+                        else
+                          Text(
+                            config.appName ?? "Smart Restaurant",
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        Text(
+                          config.welcomeMessage ??
+                              "Login to manage your restaurant",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
-                        backgroundColor: secondaryColor,
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+
+                        const SizedBox(height: 30),
+
+                        // Username
+                        TextField(
+                          controller: _usernameController,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: "Username",
+                            filled: true,
+                            prefixIcon: const Icon(Icons.person_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                         ),
-                      ),
-                      child: _loading
-                          ? SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
+
+                        const SizedBox(height: 18),
+
+                        // Password
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          onSubmitted: (_) => _login(),
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            filled: true,
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                               ),
-                            )
-                          : const Text("Login NEW"),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Clear Credentials Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: _clearCredentials,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                         ),
-                        side: BorderSide(color: secondaryColor, width: 2),
-                      ),
-                      child: Text(
-                        "Clear Old Credentials",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
 
-                  // Default credentials hint
-                  Text(
-                    "Default: admin / 123456",
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        const SizedBox(height: 12),
+
+                        // Error
+                        if (_error != null)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error, color: Colors.red),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _error!,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        const SizedBox(height: 22),
+
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              backgroundColor: primary,
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "LOGIN",
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Clear credentials
+                        TextButton(
+                          onPressed: _clearCredentials,
+                          child: const Text("Clear saved credentials"),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          "Default: admin / 123456",
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           ),

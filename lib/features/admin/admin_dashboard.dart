@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_restaurant/core/providers/auth_provider.dart';
+import 'package:smart_restaurant/features/admin/table_page.dart';
 import 'package:smart_restaurant/features/config/ConfigPage.dart';
 import 'package:smart_restaurant/features/menu/menu_page.dart';
 import 'package:smart_restaurant/features/orders/orders_page.dart';
@@ -101,6 +104,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return Colors.white;
     }
   }
+  void logout() async {
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  await authProvider.logout(); // Clears token and role
+
+  // Go back to login using GoRouter
+  if (mounted) {
+    context.go('/login');
+  }
+}
+
 
   Widget buildSidebar(
     Color sidebarColor,
@@ -147,14 +160,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           const SizedBox(height: 30),
           buildSidebarButton(Icons.fastfood, "Products", selectedColor),
-          buildSidebarButton(Icons.add, "Add Product", selectedColor),
-          buildSidebarButton(Icons.settings, "Config", selectedColor),
-          buildSidebarButton(Icons.settings, "Resource Mg", selectedColor),
-          buildSidebarButton(Icons.settings, "Resource human", selectedColor),
-
+          // buildSidebarButton(Icons.add, "Add Product", selectedColor),
+          buildSidebarButton(Icons.apple, "Resource", selectedColor),
+          buildSidebarButton(Icons.person, "staff", selectedColor),
+          buildSidebarButton(Icons.person, "tables", selectedColor),
+          
           buildSidebarButton(Icons.history, "Order History", selectedColor),
-          buildSidebarButton(Icons.qr_code, "Menu QR Code", selectedColor),
+          buildSidebarButton(Icons.qr_code, "QR Code", selectedColor),
           buildSidebarButton(Icons.menu, "Menu", selectedColor),
+          buildSidebarButton(Icons.settings, "settings", selectedColor),
+
           const Spacer(),
           buildSidebarButton(Icons.logout, "Logout", selectedColor),
           const SizedBox(height: 20),
@@ -163,32 +178,37 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget buildSidebarButton(IconData icon, String label, Color selectedColor) {
-    bool isSelected = selectedSection == label;
+ 
+Widget buildSidebarButton(IconData icon, String label, Color selectedColor, {VoidCallback? onTap}) {
+  bool isSelected = selectedSection == label;
 
-    return InkWell(
-      onTap: () {
-        setState(() {
-          selectedSection = label;
-          showProductSlide = false;
-        });
-      },
-      child: Container(
-        color: isSelected ? selectedColor.withOpacity(0.8) : Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
-        ),
+  return InkWell(
+    onTap: onTap ??
+        () {
+          setState(() {
+            selectedSection = label;
+            showProductSlide = false;
+
+            // Optional: trigger logout if label is Logout
+            if (label == "Logout") logout();
+          });
+        },
+    child: Container(
+      color: isSelected ? selectedColor.withOpacity(0.8) : Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void openProductSlide(Product p) {
     setState(() {
@@ -340,11 +360,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     switch (selectedSection) {
       case "Products":
         return buildProductsView(productsByCategory, primary, secondary);
-      case "Resource Mg":
+      case "Resource":
         return AdminResourcesPage();
       // Resource Mg
-      case "Resource human":
+      case "staff":
         return AdminHumanResourcesPage();
+      case "tables":
+        return TablePage();
       case "Menu":
         return MenuPage(restaurantId: "rest_001");
       case "Add Product":
@@ -352,7 +374,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           padding: EdgeInsets.all(16),
           child: AddProductPanel(),
         );
-      case "Config":
+      case "settings":
         return const Padding(padding: EdgeInsets.all(16), child: ConfigPage());
 
       case "Order History":

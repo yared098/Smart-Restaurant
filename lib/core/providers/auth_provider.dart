@@ -19,9 +19,6 @@ class AuthProvider with ChangeNotifier {
       password: passwordInput,
     );
 
-    // ✅ Log the full result for debugging
-    print("🔥 Login result: $result");
-
     token = result['token'];
     userId = result['user']['id'];
     username = result['user']['name'];
